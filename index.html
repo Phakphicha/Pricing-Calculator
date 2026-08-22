@@ -155,15 +155,15 @@
 
               <hr>
 
-              <h6 class="fw-bold mb-2 text-secondary"><i class="bi bi-shop me-1"></i>ตัวเลือกเฉพาะของ Shopee</h6>
+              <h6 class="fw-bold mb-2 text-secondary"><i class="bi bi-shop me-1"></i>ประเภทร้านค้า (ใช้กับทุกแพลตฟอร์ม)</h6>
 
               <div class="mb-3">
-                <label class="form-label">ประเภทร้านค้า (กำหนดอัตราคอมมิชชัน)</label>
-                <select class="form-select" id="shopeeSellerType">
-                  <option value="nonmall" selected>ร้านค้าทั่วไป (Non-Mall)</option>
+                <label class="form-label">สถานะร้านค้า (กำหนดอัตราคอมมิชชัน / ค่าธรรมเนียมสนับสนุน)</label>
+                <select class="form-select" id="sellerType">
+                  <option value="nonmall" selected>ร้านค้าทั่วไป (Non-Mall / Non-LazMall)</option>
                   <option value="nonmall_small">ร้านค้าทั่วไป — ผู้ขายรายเล็ก</option>
-                  <option value="mall">Shopee Mall</option>
-                  <option value="mall_small">Shopee Mall — ผู้ขายรายเล็ก</option>
+                  <option value="mall">Mall (Shopee Mall / TikTok Mall / LazMall)</option>
+                  <option value="mall_small">Mall — ผู้ขายรายเล็ก</option>
                 </select>
               </div>
 
@@ -286,12 +286,32 @@ const SHOPEE_PAY_METHODS = [
   { id: 'spl_12',    label: 'SPayLater ผ่อน 12 เดือน',           pct: 7.49 }
 ];
 
-/* Preset ของแพลตฟอร์มอื่น (ค่าอ้างอิง TH 2026) */
-const CATEGORY_PRESETS = {
-  fashion:     { tiktok: { c: 4.0, pay: 1.6 }, lazada: { c: 3.0, pay: 2.0 } },
-  electronics: { tiktok: { c: 4.5, pay: 1.6 }, lazada: { c: 4.0, pay: 2.0 } },
-  health:      { tiktok: { c: 5.0, pay: 1.6 }, lazada: { c: 4.5, pay: 2.0 } },
-  fmcg:        { tiktok: { c: 3.0, pay: 1.6 }, lazada: { c: 2.5, pay: 2.0 } }
+/* Preset ของ TikTok Shop (รวม VAT 7% แล้ว)
+   Commission: Mall 5.35% – 11.77% | Non-Mall 6.42% – 10.70%
+   Commerce Growth Fee (บังคับ): อิเล็กทรอนิกส์ 6.96% (รายเล็ก 6.42%) |
+                                  หมวดอื่น 8.03% (รายเล็ก 7.49%) — เพดานหัก ≤ 199 บาท/ชิ้น
+   Transaction Fee: 3.21% | ค่าธรรมเนียมคงที่: 1.07 บาท/ออเดอร์ */
+const TIKTOK_COMM_PRESETS = {
+  fashion:     { nonmall: 10.70, mall: 11.77 },
+  electronics: { nonmall: 6.42,  mall: 5.35  },
+  health:      { nonmall: 8.56,  mall: 9.63  },
+  fmcg:        { nonmall: 7.49,  mall: 6.42  }
+};
+const TIKTOK_GROWTH = {
+  electronics: { normal: 6.96, small: 6.42 },
+  other:       { normal: 8.03, small: 7.49 }
+};
+const TIKTOK_GROWTH_CAP = 199; // เพดานหักต่อชิ้น (บาท)
+
+/* Preset ของ Lazada (รวม VAT 7% แล้ว)
+   Commission: LazMall 5.35% – 10.70% | Non-Mall 4.28% – 7.49%
+   Payment Fee: 3.21% | Free Shipping Max/Cashback: 3.21% – 5.35% (ถ้าเข้าร่วม)
+   ค่าธรรมเนียมคงที่: 1.07 บาท/ออเดอร์ */
+const LAZADA_COMM_PRESETS = {
+  fashion:     { nonmall: 7.49, mall: 10.70 },
+  electronics: { nonmall: 4.28, mall: 5.35  },
+  health:      { nonmall: 6.42, mall: 8.56  },
+  fmcg:        { nonmall: 5.35, mall: 7.49  }
 };
 
 /* ---------- นิยามแพลตฟอร์ม ---------- */
@@ -306,15 +326,16 @@ const PLATFORMS = [
   {
     id: 'tiktok', name: 'TikTok Shop', cls: 'pc-tiktok', enabled: true,
     campaignLabel: 'TikTok Seller Campaign',
-    campaignOn: false, campaignPct: 2.0,
-    commissionPct: 5.0, paymentPct: 1.6, servicePct: 0, infraFee: 0,
+    hasCampaign: false, campaignOn: false, campaignPct: 2.0,
+    commissionPct: 6.42, paymentPct: 3.21, servicePct: 0, infraFee: 1.07,
+    growthPct: 6.96, growthCap: TIKTOK_GROWTH_CAP,   // Commerce Growth Fee (บังคับ, เพดาน ≤199฿)
     custom: false, showFees: false, open: false
   },
   {
     id: 'lazada', name: 'Lazada', cls: 'pc-lazada', enabled: true,
-    campaignLabel: 'Lazada Free Shipping Max',
-    campaignOn: false, campaignPct: 2.0,
-    commissionPct: 4.5, paymentPct: 2.0, servicePct: 1.0, infraFee: 0,
+    campaignLabel: 'Lazada Free Shipping Max / Cashback',
+    hasCampaign: true, campaignOn: false, campaignPct: 5.35,
+    commissionPct: 4.28, paymentPct: 3.21, servicePct: 0, infraFee: 1.07,
     custom: false, showFees: false, open: false
   },
   {
@@ -350,30 +371,63 @@ function readForm() {
 }
 
 /* ═══════════ CORE MATH ENGINE ═══════════
-   Target:    price = (cost+pack+profit+fixed) / (1 - fee%)
-   Evaluate:  profit = price*(1-fee%) - fixed - cost - pack        */
+   Evaluate:  profit = price − ค่าธรรมเนียมทั้งหมด(ที่ราคานี้) − ต้นทุน
+   Target:    หาราคาที่ทำให้กำไร = เป้าหมาย
+              (TikTok Growth Fee มีเพดานหัก ≤ 199฿ ทำให้ค่าธรรมเนียมไม่เป็นเชิงเส้น
+               จึงแก้สมการด้วย bisection แทนสูตรย้อนกลับตรง ๆ)        */
+
+/* คำนวณค่าธรรมเนียมแต่ละรายการ ณ ราคาขาย "price" */
+function platformFees(p, price, form) {
+  const commissionFee = price * p.commissionPct / 100;
+  const paymentFee    = price * p.paymentPct / 100;
+  const serviceFee    = price * p.servicePct / 100;
+  const campaignFee   = p.campaignOn ? price * p.campaignPct / 100 : 0;
+  const growthFee     = p.growthPct ? Math.min(price * p.growthPct / 100, p.growthCap || Infinity) : 0;
+  const adsFeeBaht    = price * ((form.adsFee + form.voucherFee) / 100);
+  return { commissionFee, paymentFee, serviceFee, campaignFee, growthFee, adsFeeBaht };
+}
+
 function calcPlatform(p, form) {
   const totalCost = form.productCost + form.packCost;
   const pctSum = p.commissionPct + p.paymentPct + p.servicePct +
                  (p.campaignOn ? p.campaignPct : 0) + form.adsFee + form.voucherFee;
   const feeDecimal = pctSum / 100;
-  const totalFeePercent = pctSum;
+  const totalFeePercent = pctSum + (p.growthPct || 0);
 
+  /* ส่วนเชิงเส้น (ไม่มีเพดาน) ต้องต่ำกว่า 100% จึงจะคำนวณได้ */
   if (feeDecimal >= 1) {
-    return { error: true, warning: 'ค่าธรรมเนียมรวม ≥ 100% — ไม่สามารถคำนวณได้', price: 0, profit: 0, marginPercent: 0,
-             commissionFee: 0, paymentFee: 0, serviceFee: 0, campaignFee: 0, adsFeeBaht: 0, totalFeePercent, totalDeduction: 0, totalCost: 0 };
+    return { error: true, warning: 'ค่าธรรมเนียมรวม (ส่วนที่ไม่มีเพดาน) ≥ 100% — ไม่สามารถคำนวณได้', price: 0, profit: 0, marginPercent: 0,
+             commissionFee: 0, paymentFee: 0, serviceFee: 0, campaignFee: 0, growthFee: 0, adsFeeBaht: 0, totalFeePercent, totalDeduction: 0, totalCost: 0 };
   }
 
-  const price = form.calcMode === 'target'
-    ? (totalCost + form.targetProfit + p.infraFee) / (1 - feeDecimal)
-    : form.sellPrice;
+  let price;
+  if (form.calcMode === 'target') {
+    /* กำไรขากลับที่ราคา p: g(p) = p − fees(p) − infra − totalCost  (เพิ่มขึ้นตามราคาเสมอ) */
+    const g = pr => {
+      const f = platformFees(p, pr, form);
+      return pr - (f.commissionFee + f.paymentFee + f.serviceFee + f.campaignFee + f.growthFee + f.adsFeeBaht) - p.infraFee - totalCost;
+    };
+    /* ค่าตั้งต้นจากสูตรเชิงเส้น (แม่นยำเมื่อไม่มี growth fee) */
+    let lo = 0, hi = (totalCost + form.targetProfit + p.infraFee) / (1 - feeDecimal);
+    if (g(hi) < form.targetProfit) {
+      /* ยังไม่ถึงเป้า → ขยายขอบบนจนกว่าจะเกินเป้า (สูงสุด 60 รอบ กันลูปไม่รู้จบ) */
+      let ok = false;
+      for (let i = 0; i < 60 && hi < 1e9; i++) { hi *= 1.5; if (g(hi) >= form.targetProfit) { ok = true; break; } }
+      if (!ok) return { error: true, warning: 'ไม่พบราคาขายที่ทำให้ได้กำไรตามเป้าหมาย', price: 0, profit: 0, marginPercent: 0,
+        commissionFee: 0, paymentFee: 0, serviceFee: 0, campaignFee: 0, growthFee: 0, adsFeeBaht: 0, totalFeePercent, totalDeduction: 0, totalCost };
+    }
+    /* bisection 50 รอบ → แม่นยำระดับสตาง */
+    for (let i = 0; i < 50; i++) {
+      const mid = (lo + hi) / 2;
+      (g(mid) < form.targetProfit) ? lo = mid : hi = mid;
+    }
+    price = (lo + hi) / 2;
+  } else {
+    price = form.sellPrice;
+  }
 
-  const commissionFee = price * p.commissionPct / 100;
-  const paymentFee    = price * p.paymentPct / 100;
-  const serviceFee    = price * p.servicePct / 100;
-  const campaignFee   = p.campaignOn ? price * p.campaignPct / 100 : 0;
-  const adsFeeBaht    = price * ((form.adsFee + form.voucherFee) / 100);
-  const totalDeduction = commissionFee + paymentFee + serviceFee + campaignFee + adsFeeBaht + p.infraFee;
+  const f = platformFees(p, price, form);
+  const totalDeduction = f.commissionFee + f.paymentFee + f.serviceFee + f.campaignFee + f.growthFee + f.adsFeeBaht + p.infraFee;
   const profit = price - totalDeduction - totalCost;
   const marginPercent = price > 0 ? (profit / price) * 100 : 0;
 
@@ -381,8 +435,10 @@ function calcPlatform(p, form) {
   if (form.calcMode === 'evaluate' && profit < 0) warning = '⚠️ ขายที่ราคานี้จะขาดทุน ฿' + fmt(Math.abs(profit)) + ' ต่อชิ้น';
   if (!warning && price > 0 && price < totalCost) warning = '⚠️ ราคาขายต่ำกว่าต้นทุนสินค้า+บรรจุภัณฑ์';
 
-  return { error: false, warning, price, profit, marginPercent, commissionFee, paymentFee,
-           serviceFee, campaignFee, adsFeeBaht, totalDeduction, totalFeePercent, totalCost };
+  return { error: false, warning, price, profit, marginPercent,
+           commissionFee: f.commissionFee, paymentFee: f.paymentFee, serviceFee: f.serviceFee,
+           campaignFee: f.campaignFee, growthFee: f.growthFee, adsFeeBaht: f.adsFeeBaht,
+           totalDeduction, totalFeePercent, totalCost };
 }
 
 /* ---------- Render: การ์ดแพลตฟอร์ม ---------- */
@@ -451,6 +507,7 @@ function renderPlatforms() {
             <div class="breakdown-item"><span>ค่าธรรมเนียมชำระเงิน (${p.paymentPct}%)</span><span>-฿${fmt(r.paymentFee)}</span></div>
             ${p.servicePct > 0 ? `<div class="breakdown-item"><span>ค่าบริการอื่น (${p.servicePct}%)</span><span>-฿${fmt(r.serviceFee)}</span></div>` : ''}
             ${p.campaignOn ? `<div class="breakdown-item"><span>แคมเปญ (${p.campaignPct}%)</span><span>-฿${fmt(r.campaignFee)}</span></div>` : ''}
+            ${p.growthPct ? `<div class="breakdown-item"><span>ค่าธรรมเนียมสนับสนุนการเติบโต (${p.growthPct}% ไม่เกิน ฿${p.growthCap})</span><span>-฿${fmt(r.growthFee)}</span></div>` : ''}
             <div class="breakdown-item"><span>Ads + วอลเชอร์ (${form.adsFee + form.voucherFee}%)</span><span>-฿${fmt(r.adsFeeBaht)}</span></div>
             ${p.infraFee > 0 ? `<div class="breakdown-item"><span>ค่าธรรมเนียมโครงสร้างพื้นฐาน</span><span>-฿${fmt(p.infraFee)}</span></div>` : ''}
             <div class="breakdown-item"><span>ต้นทุนสินค้า + บรรจุภัณฑ์</span><span>-฿${fmt(r.totalCost)}</span></div>
@@ -496,12 +553,22 @@ function renderCharts() {
 /* ---------- แคมเปญ toggles ---------- */
 function renderCampaigns() {
   $id('campaignList').innerHTML = PLATFORMS.map(p => {
-    // Shopee: ให้เลือกระดับค่าบริการโปรแกรมได้ (3.21% – 5.35%)
-    const pctCtrl = p.id === 'shopee'
-      ? `<select class="form-select form-select-sm mt-1" style="max-width:150px" onchange="setCampaignPct('${p.id}', this.value)">
-           ${[3.21, 4.28, 5.35].map(v => `<option value="${v}" ${p.campaignPct === v ? 'selected' : ''}>${v}%</option>`).join('')}
-         </select>`
-      : `<div class="text-secondary" style="font-size:.78rem">ค่าบริการเพิ่ม ${p.campaignPct}% ของราคาขาย</div>`;
+    /* TikTok: Commerce Growth Fee เป็นค่าธรรมเนียมบังคับ (ไม่มีสวิตช์ปิด) */
+    if (p.hasCampaign === false) {
+      return `
+      <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+        <div>
+          <div class="small">${p.name} — ค่าธรรมเนียมสนับสนุนการเติบโต (บังคับ)</div>
+          <div class="text-secondary" style="font-size:.78rem">${p.growthPct}% ของราคาขาย (เพดานหักไม่เกิน ฿${p.growthCap}/ชิ้น)</div>
+        </div>
+        <span class="badge text-bg-secondary">หักทุกออเดอร์</span>
+      </div>`;
+    }
+    /* Shopee / Lazada: เลือกเปิด-ปิด + เลือกระดับ % ได้ (3.21% – 5.35%) */
+    const pctCtrl = `
+      <select class="form-select form-select-sm mt-1" style="max-width:150px" onchange="setCampaignPct('${p.id}', this.value)">
+        ${[3.21, 4.28, 5.35].map(v => `<option value="${v}" ${p.campaignPct === v ? 'selected' : ''}>${v}%</option>`).join('')}
+      </select>`;
     return `
     <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
       <div>
@@ -542,23 +609,33 @@ function toggleBreakdown(id) {
 }
 function applyPreset() {
   const cat = $id('categoryPreset').value;
-  const preset = CATEGORY_PRESETS[cat];
+  const sellerType = $id('sellerType').value;           // nonmall | nonmall_small | mall | mall_small
+  const isSmall = sellerType.endsWith('_small');
+  const isMall = sellerType.startsWith('mall');
 
-  // แพลตฟอร์มอื่น (TikTok / Lazada)
-  if (preset) {
-    PLATFORMS.forEach(p => {
-      const v = preset[p.id];
-      if (v && !p.custom) { p.commissionPct = v.c; p.paymentPct = v.pay; }
-    });
-  }
-
-  // Shopee: คอมมิชชันตาม หมวดหมู่ × ประเภทร้านค้า (นโยบาย 4 ส.ค. 2026)
   const shopee = PLATFORMS.find(p => p.id === 'shopee');
+  const tiktok = PLATFORMS.find(p => p.id === 'tiktok');
+  const lazada = PLATFORMS.find(p => p.id === 'lazada');
+
+  /* Shopee: คอมมิชชันตาม หมวด × ประเภทร้าน (นโยบาย 4 ส.ค. 2026) */
   const shopeePreset = SHOPEE_COMM_PRESETS[cat];
-  if (shopeePreset) {
-    shopee.commissionPct = shopeePreset[$id('shopeeSellerType').value];
+  if (shopeePreset) shopee.commissionPct = shopeePreset[sellerType];
+
+  /* TikTok: คอมมิชชันแยก Mall/Non-Mall + Commerce Growth Fee แยกรายเล็ก */
+  const ttPreset = TIKTOK_COMM_PRESETS[cat];
+  if (ttPreset) {
+    tiktok.commissionPct = isMall ? ttPreset.mall : ttPreset.nonmall;
+    const growth = cat === 'electronics' ? TIKTOK_GROWTH.electronics : TIKTOK_GROWTH.other;
+    tiktok.growthPct = isSmall ? growth.small : growth.normal;
   }
-  // ค่าธรรมเนียมชำระเงินตามวิธีการชำระที่เลือก
+
+  /* Lazada: คอมมิชชันแยก LazMall / ร้านทั่วไป */
+  const lzPreset = LAZADA_COMM_PRESETS[cat];
+  if (lzPreset) lazada.commissionPct = isMall ? lzPreset.mall : lzPreset.nonmall;
+
+  /* ค่าธรรมเนียมชำระเงิน: TikTok / Lazada = 3.21% | Shopee ตามวิธีชำระที่เลือก */
+  tiktok.paymentPct = 3.21;
+  lazada.paymentPct = 3.21;
   const payMethod = SHOPEE_PAY_METHODS.find(m => m.id === $id('shopeePayMethod').value) || SHOPEE_PAY_METHODS[0];
   shopee.paymentPct = payMethod.pct;
 
@@ -613,7 +690,7 @@ function saveToSheet() {
     return {
       platform: p.name,
       commFee: p.commissionPct, payFee: p.paymentPct,
-      serviceFee: p.servicePct + (p.campaignOn ? p.campaignPct : 0),
+      serviceFee: p.servicePct + (p.campaignOn ? p.campaignPct : 0) + (p.growthPct || 0),
       infraFee: p.infraFee,
       totalFeePercent: r.totalFeePercent,
       recommendedPrice: r.price.toFixed(2),
@@ -755,7 +832,7 @@ function init() {
   });
 
   $id('categoryPreset').addEventListener('change', applyPreset);
-  $id('shopeeSellerType').addEventListener('change', applyPreset);
+  $id('sellerType').addEventListener('change', applyPreset);
   $id('shopeePayMethod').addEventListener('change', applyShopeePayMethod);
 
   // สร้างตัวเลือกวิธีชำระเงิน Shopee (ปกติ 3.21% / SPayLater 4.28–7.49%)
