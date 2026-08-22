@@ -23,6 +23,95 @@ function doGet(e) {
 }
 
 /**
+ * JSON API (สำหรับโฮสต์ภายนอก เช่น GitHub Pages / Cloudflare Pages)
+ * POST { action: 'activateVIP', key: 'VIP-XXXXXX-0000' } → { status, expiry }
+ */
+function doPost(e) {
+  try {
+    var req = JSON.parse(e.postData.contents);
+    if (req.action === 'activateVIP') return jsonOut_(activateVIP(req.key));
+    return jsonOut_({ status: 'error', message: 'action ไม่ถูกต้อง' });
+  } catch (err) {
+    return jsonOut_({ status: 'error', message: err.toString() });
+  }
+}
+function jsonOut_(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ═══════════ ระบบสมาชิก VIP (VIP Key) ═══════════ */
+
+/**
+ * ตรวจสอบรหัส VIP จากชีต VIP_KEYS
+ * คอลัมน์: key | status (active/disabled) | expiry (วันที่หมดอายุ) | activatedAt
+ */
+function activateVIP(key) {
+  try {
+    if (!key) return { status: 'error', message: 'กรุณากรอกรหัส VIP' };
+    var sheet = getOrCreateVipSheet();
+    var lastRow = sheet.getLastRow();
+    if (lastRow < 2) return { status: 'error', message: 'ไม่พบรหัส VIP นี้ในระบบ' };
+
+    var data = sheet.getRange(2, 1, lastRow - 1, 4).getValues();
+    for (var i = 0; i < data.length; i++) {
+      if (String(data[i][0]).trim().toUpperCase() === String(key).trim().toUpperCase()) {
+        if (String(data[i][1]).trim() !== 'active')
+          return { status: 'error', message: 'รหัสนี้ถูกปิดใช้งานแล้ว กรุณาติดต่อผู้ขาย' };
+        var exp = new Date(data[i][2]);
+        if (!isNaN(exp.getTime())) {
+          if (exp < new Date())
+            return { status: 'error', message: 'รหัส VIP นี้หมดอายุแล้ว (' + Utilities.formatDate(exp, 'Asia/Bangkok', 'dd/MM/yyyy') + ')' };
+          var expiryText = Utilities.formatDate(exp, 'Asia/Bangkok', 'dd/MM/yyyy');
+        }
+        if (!data[i][3]) sheet.getRange(i + 2, 4).setValue(new Date()); // บันทึกวันที่เริ่มใช้งาน
+        return { status: 'success', message: 'ยืนยันรหัส VIP สำเร็จ ยินดีต้อนรับสมาชิก VIP!', expiry: expiryText || '' };
+      }
+    }
+    return { status: 'error', message: 'ไม่พบรหัส VIP นี้ในระบบ' };
+  } catch (err) {
+    return { status: 'error', message: err.toString() };
+  }
+}
+
+/**
+ * (สำหรับเจ้าของร้าน) สร้างรหัส VIP จำนวน count รหัส อายุ days วัน
+ * รันใน Apps Script Editor แล้วดูผลใน Log
+ */
+function generateVipKeys(count, days) {
+  var sheet = getOrCreateVipSheet();
+  var expiry = new Date(Date.now() + (days || 30) * 86400000);
+  var keys = [], rows = [];
+  for (var i = 0; i < (count || 1); i++) {
+    var code = Utilities.base64Encode(Utilities.getUuid()).replace(/[^a-zA-Z]/g, '')
+      .substring(0, 6).toUpperCase();
+    var key = 'VIP-' + code + '-' + Math.floor(1000 + Math.random() * 9000);
+    keys.push(key);
+    rows.push([key, 'active', expiry, '']);
+  }
+  sheet.getRange(sheet.getLastRow() + 1, 1, rows.length, 4).setValues(rows);
+  Logger.log(keys.join('\n'));
+  return keys;
+}
+
+/* ---------- Helper: หา/สร้างชีต VIP_KEYS ---------- */
+function getOrCreateVipSheet() {
+  var SHEET_ID = '1tkLmF-Zqwm3AqapMxdM2ClIds7Ma38iEcfhkvJdwxYw';
+  var ss = SpreadsheetApp.openById(SHEET_ID);
+  var sheet = ss.getSheetByName('VIP_KEYS');
+  if (!sheet) {
+    sheet = ss.insertSheet('VIP_KEYS');
+    var headers = ['รหัส VIP', 'สถานะ (active/disabled)', 'วันหมดอายุ', 'วันที่เริ่มใช้งาน'];
+    sheet.appendRow(headers);
+    sheet.getRange(1, 1, 1, headers.length)
+      .setFontWeight('bold')
+      .setBackground('#fbbf24')
+      .setFontColor('#1c1814');
+  }
+  return sheet;
+}
+
+/**
  * ดึงข้อมูลประวัติย้อนหลังล่าสุดจาก Sheet (แสดงในหน้าเว็บ)
  */
 function getHistory(limit) {

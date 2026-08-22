@@ -172,6 +172,31 @@
     .alert-warning { background: rgba(245, 158, 11, .12); border-color: rgba(245, 158, 11, .35); color: #fbbf24; }
 
     footer { border-top: 1px solid var(--border); background: rgba(13, 11, 9, .8); margin-top: 2rem; color: var(--muted); }
+
+    /* ── VIP / Freemium ── */
+    .btn-vip { background: linear-gradient(135deg, #b45309, #f59e0b); border: none; color: #fff; font-weight: 500; }
+    .btn-vip:hover { background: linear-gradient(135deg, #d97706, #fbbf24); color: #fff; }
+    .badge-vip {
+      background: linear-gradient(135deg, #f59e0b, #fde047);
+      color: #422006; font-size: .62rem; font-weight: 700; letter-spacing: .03em;
+      padding: .18rem .42rem; border-radius: 6px; vertical-align: middle; margin-left: .35rem;
+    }
+    .vip-active-badge {
+      background: rgba(245, 158, 11, .16); color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, .4); border-radius: 999px;
+      font-size: .78rem; padding: .25rem .7rem; display: inline-flex; align-items: center; gap: .3rem;
+    }
+    .ad-banner {
+      background: rgba(245, 158, 11, .1); border: 1px solid rgba(245, 158, 11, .32);
+      border-radius: 12px; color: #fbbf24; font-size: .85rem;
+    }
+    .ad-banner button { color: #fbbf24; font-weight: 600; text-decoration: underline; }
+    .locked-overlay { position: relative; }
+    .locked-overlay .lock-veil {
+      position: absolute; inset: 0; z-index: 2; border-radius: var(--radius-lg);
+      background: rgba(16, 14, 11, .6); backdrop-filter: blur(2px);
+      display: flex; align-items: center; justify-content: center;
+    }
   </style>
 </head>
 <body>
@@ -195,9 +220,12 @@
         <span class="badge bg-success-subtle text-success border border-success-subtle d-none d-md-inline-flex">
           <i class="bi bi-patch-check-fill me-1"></i>อัปเดตค่าธรรมเนียมล่าสุด 2026
         </span>
+        <button id="btnVIP" class="btn btn-vip btn-sm rounded-pill px-3" onclick="openVipModal()">
+          <i class="bi bi-crown-fill me-1"></i><span id="btnVIPText">เปิดใช้งาน VIP</span>
+        </button>
         <div class="btn-group btn-group-sm" role="group">
           <button type="button" class="btn btn-light active" id="btnModeSingle"><i class="bi bi-box-seam me-1"></i>สินค้าชิ้นเดียว</button>
-          <button type="button" class="btn btn-outline-light" id="btnModeBulk"><i class="bi bi-table me-1"></i>หลายสินค้า (Bulk)</button>
+          <button type="button" class="btn btn-outline-light" id="btnModeBulk"><i class="bi bi-table me-1"></i>หลายสินค้า (Bulk)<i class="bi bi-lock-fill ms-1" id="bulkLock"></i></button>
         </div>
         <button id="btnInstallApp" class="btn btn-install btn-sm rounded-pill px-3 d-none">
           <i class="bi bi-download me-1"></i>ติดตั้งแอป
@@ -207,6 +235,12 @@
   </nav>
 
   <div class="container mb-5">
+
+    <!-- แบนเนอร์อัปเกรด (แสดงเฉพาะแผนฟรี) -->
+    <div id="adBanner" class="ad-banner d-flex flex-wrap align-items-center justify-content-between gap-2 px-3 py-2 mb-4 d-none">
+      <span><i class="bi bi-stars me-1"></i>อัปเกรดเป็น <b>VIP</b> — ปลดล็อกโหมด Bulk, ส่งออก Excel/CSV ไร้ลายน้ำ, ช่องทางขาย Custom และประวัติไม่จำกัด</span>
+      <button type="button" class="btn btn-sm btn-vip rounded-pill" onclick="openVipModal()"><i class="bi bi-crown-fill me-1"></i>อัปเกรดเลย</button>
+    </div>
 
     <!-- ═══════════ MODE: SINGLE ═══════════ -->
     <div id="singleMode">
@@ -323,7 +357,7 @@
                 <i class="bi bi-cloud-arrow-up-fill me-1"></i>บันทึกลง Google Sheet
               </button>
               <button type="button" class="btn btn-success flex-grow-1" id="btnExportCSV">
-                <i class="bi bi-file-earmark-excel me-1"></i>ส่งออก CSV
+                <i class="bi bi-file-earmark-excel me-1"></i>ส่งออก CSV<span id="csvLock1"></span>
               </button>
               <button type="button" class="btn btn-dark flex-grow-1" id="btnShare">
                 <i class="bi bi-share me-1"></i>แชร์ผลคำนวณ
@@ -358,7 +392,7 @@
           <h5 class="mb-0 fw-semibold"><i class="bi bi-table me-2"></i>คำนวณหลายสินค้า (SKU Management)</h5>
           <div class="d-flex gap-2">
             <button type="button" class="btn btn-primary btn-sm" id="btnAddBulkRow"><i class="bi bi-plus-lg me-1"></i>เพิ่มสินค้า</button>
-            <button type="button" class="btn btn-success btn-sm" id="btnExportBulkCSV"><i class="bi bi-file-earmark-excel me-1"></i>ส่งออก CSV</button>
+            <button type="button" class="btn btn-success btn-sm" id="btnExportBulkCSV"><i class="bi bi-file-earmark-excel me-1"></i>ส่งออก CSV<span id="csvLock2"></span></button>
           </div>
         </div>
         <div class="card-body">
@@ -474,6 +508,118 @@ const PLATFORMS = [
 
 const charts = {};
 let bulkRows = [];
+
+/* ═══════════════════════════════════════════════════════════
+   ระบบสมาชิก Freemium (Free vs VIP)
+   - สถานะเก็บใน localStorage (vip_state)
+   - ตรวจรหัส VIP ผ่าน google.script.run (Apps Script)
+     หรือ VIP_API_URL (กรณีโฮสต์บน GitHub/Cloudflare Pages)
+   ═══════════════════════════════════════════════════════════ */
+const VIP_API_URL = '';   // ถ้าโฮสต์นอก Apps Script ให้ใส่ URL Web App ที่ Deploy ไว้ เช่น https://script.google.com/macros/s/AKfy.../exec
+const FREE_HISTORY_LIMIT = 10;
+
+let vipState = loadVipState();
+
+function loadVipState() {
+  try { return JSON.parse(localStorage.getItem('vip_state')) || { isVIP: false, expiry: '' }; }
+  catch { return { isVIP: false, expiry: '' }; }
+}
+function saveVipState() { localStorage.setItem('vip_state', JSON.stringify(vipState)); }
+function isVIP() { return !!vipState.isVIP; }
+
+/* ตรวจสิทธิ์: ถ้ายังไม่เป็น VIP แสดง Paywall แล้ว return false */
+function requireVIP(featureName) {
+  if (isVIP()) return true;
+  showPaywall(featureName);
+  return false;
+}
+
+function showPaywall(featureName) {
+  Swal.fire({
+    icon: 'info',
+    title: 'ฟีเจอร์นี้สำหรับสมาชิก VIP เท่านั้น',
+    html: `<div style="text-align:left">
+      <p style="margin-bottom:.6rem">ฟีเจอร์ <b>${featureName}</b> เป็นสิทธิ์พิเศษของสมาชิก VIP</p>
+      <ul style="text-align:left;font-size:.9rem;margin:0;padding-left:1.2rem;line-height:1.9">
+        <li>คำนวณแบบ <b>Bulk</b> หลายร้อย SKU ในครั้งเดียว</li>
+        <li>ส่งออกไฟล์ <b>CSV/Excel</b> ไร้ลายน้ำ</li>
+        <li>เพิ่ม <b>ช่องทางขาย Custom</b> ไม่จำกัด</li>
+        <li>บันทึกประวัติ <b>ไม่จำกัดจำนวน</b></li>
+        <li>ใช้งาน <b>โดยไม่มีโฆษณา</b></li>
+      </ul></div>`,
+    confirmButtonText: '<i class="bi bi-key-fill me-1"></i>กรอกรหัส VIP',
+    confirmButtonColor: '#EE4D2D',
+    showCancelButton: true,
+    cancelButtonText: 'ไว้ทีหลัง'
+  }).then(r => { if (r.isConfirmed) promptVipKey(); });
+}
+
+function openVipModal() {
+  if (isVIP()) {
+    Swal.fire({
+      icon: 'success',
+      title: 'คุณเป็นสมาชิก VIP อยู่แล้ว',
+      html: vipState.expiry ? `อยู่ในระยะการใช้งานถึงวันที่ <b>${vipState.expiry}</b>` : 'สิทธิ์ VIP ใช้งานได้ไม่จำกัดระยะเวลา',
+      confirmButtonText: 'ตกลง', confirmButtonColor: '#EE4D2D'
+    });
+    return;
+  }
+  promptVipKey();
+}
+
+function promptVipKey() {
+  Swal.fire({
+    title: '<i class="bi bi-crown-fill" style="color:#f59e0b"></i> กรอกรหัส VIP',
+    text: 'รับรหัสได้จากผู้ขายหลังชำระค่าสมาชิก (รูปแบบ VIP-XXXXXX-0000)',
+    input: 'text',
+    inputPlaceholder: 'VIP-XXXXXX-0000',
+    confirmButtonText: 'ยืนยันรหัส',
+    confirmButtonColor: '#EE4D2D',
+    showCancelButton: true,
+    cancelButtonText: 'ยกเลิก'
+  }).then(r => { if (r.isConfirmed && r.value) activateVIP(r.value); });
+}
+
+async function activateVIP(key) {
+  Swal.fire({ title: 'กำลังตรวจสอบรหัส...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+  try {
+    let res;
+    if (typeof google !== 'undefined' && google.script && google.script.run) {
+      res = await new Promise((resolve, reject) =>
+        google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).activateVIP(key.trim()));
+    } else if (VIP_API_URL) {
+      const r = await fetch(VIP_API_URL, {
+        method: 'POST',
+        body: JSON.stringify({ action: 'activateVIP', key: key.trim() })
+      });
+      res = await r.json();
+    } else {
+      res = { status: 'error', message: 'ระบบสมาชิกยังไม่พร้อมใช้งาน (ต้อง Deploy บน Google Apps Script หรือตั้งค่า VIP_API_URL)' };
+    }
+
+    if (res.status === 'success') {
+      vipState = { isVIP: true, expiry: res.expiry || '', activatedAt: new Date().toISOString() };
+      saveVipState();
+      applyVipUI();
+      Swal.fire({ icon: 'success', title: 'ปลดล็อก VIP สำเร็จ!', text: res.message + (res.expiry ? ' (ใช้ได้ถึง ' + res.expiry + ')' : ''), confirmButtonColor: '#EE4D2D', timer: 3000 });
+    } else {
+      Swal.fire({ icon: 'error', title: 'รหัสไม่ถูกต้อง', text: res.message || 'กรุณาตรวจสอบรหัสและลองอีกครั้ง', confirmButtonColor: '#EE4D2D' });
+    }
+  } catch (err) {
+    Swal.fire({ icon: 'error', title: 'เชื่อมต่อระบบไม่สำเร็จ', text: err.toString(), confirmButtonColor: '#EE4D2D' });
+  }
+}
+
+/* อัปเดต UI ตามสถานะสมาชิก (ล็อก/ปลดล็อก + แบนเนอร์) */
+function applyVipUI() {
+  const vip = isVIP();
+  const lockIcon = '<i class="bi bi-lock-fill ms-1"></i>';
+  $id('btnVIPText').textContent = vip ? 'VIP ' + (vipState.expiry || '') : 'เปิดใช้งาน VIP';
+  $id('adBanner').classList.toggle('d-none', vip);
+  $id('bulkLock') && ($id('bulkLock').style.display = vip ? 'none' : '');
+  $id('csvLock1').innerHTML = vip ? '' : lockIcon;
+  $id('csvLock2').innerHTML = vip ? '' : lockIcon;
+}
 
 /* ---------- Utils ---------- */
 const fmt = n => (Math.round((+n || 0) * 100) / 100).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -712,6 +858,8 @@ function setCampaignPct(id, val) {
 /* ---------- Interactions ---------- */
 function togglePlatform(id, on) {
   const p = PLATFORMS.find(x => x.id === id);
+  /* ช่องทาง Custom เป็นสิทธิ์ VIP */
+  if (id === 'custom' && on && !requireVIP('ช่องทางขาย Custom')) { renderPlatforms(); return; }
   p.enabled = on; renderPlatforms();
 }
 function toggleCampaign(id, on) {
@@ -851,11 +999,14 @@ function saveToSheet() {
 /* ---------- ประวัติจาก Sheet ---------- */
 function loadHistory() {
   if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+  /* แผนฟรีเห็น 10 รายการล่าสุด · VIP ไม่จำกัด */
+  const limit = isVIP() ? 50 : FREE_HISTORY_LIMIT;
   google.script.run
     .withSuccessHandler(res => {
       if (!res.data || !res.data.length) return;
+      const rows = isVIP() ? res.data : res.data.slice(0, FREE_HISTORY_LIMIT);
       $id('historyCard').classList.remove('d-none');
-      $id('historyBody').innerHTML = res.data.map(h => `
+      $id('historyBody').innerHTML = rows.map(h => `
         <tr>
           <td class="text-secondary small">${h.date}</td>
           <td>${h.sku}</td>
@@ -864,13 +1015,15 @@ function loadHistory() {
           <td class="${h.profit < 0 ? 'text-danger' : 'text-success'} fw-semibold">฿${fmt(h.profit)}</td>
         </tr>`).join('');
     })
-    .getHistory(15);
+    .getHistory(limit);
 }
 
 /* ═══════════ CSV Export ═══════════ */
 function downloadCSV(head, rows, filename) {
   const esc = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const csv = '\uFEFF' + [head, ...rows].map(r => r.map(esc).join(',')).join('\r\n');
+  /* แผนฟรี: เพิ่มลายน้ำท้ายไฟล์ */
+  const allRows = isVIP() ? rows : [...rows, ['— สร้างด้วยเวอร์ชันฟรี · อัปเกรด VIP เพื่อลบลายน้ำนี้ —']];
+  const csv = '\uFEFF' + [head, ...allRows].map(r => r.map(esc).join(',')).join('\r\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = filename; a.click();
@@ -879,6 +1032,7 @@ function downloadCSV(head, rows, filename) {
 }
 
 function exportSingleCSV() {
+  if (!requireVIP('ส่งออกไฟล์ CSV/Excel')) return;
   const form = readForm();
   const head = ['ชื่อสินค้า', 'แพลตฟอร์ม', 'โหมด', 'ต้นทุน', 'บรรจุภัณฑ์', 'ราคาขาย', 'กำไรสุทธิ', 'กำไร(%)', 'ค่าธรรมเนียมรวม(%)', 'รวมยอดหัก(฿)'];
   const rows = PLATFORMS.filter(p => p.enabled).map(p => {
@@ -918,6 +1072,7 @@ function renderBulk() {
 }
 
 function exportBulkCSV() {
+  if (!requireVIP('ส่งออกไฟล์ CSV/Excel')) return;
   const active = PLATFORMS.filter(p => p.enabled);
   const form = readForm();
   const head = ['SKU', 'ต้นทุน', 'บรรจุภัณฑ์', 'กำไรเป้าหมาย',
@@ -976,6 +1131,7 @@ function init() {
     renderPlatforms();
   });
   $id('btnModeBulk').addEventListener('click', () => {
+    if (!requireVIP('คำนวณหลายสินค้า (Bulk Mode)')) return;
     $id('singleMode').classList.add('d-none'); $id('bulkMode').classList.remove('d-none');
     $id('btnModeBulk').classList.add('active', 'btn-light'); $id('btnModeBulk').classList.remove('btn-outline-light');
     $id('btnModeSingle').classList.remove('active', 'btn-light'); $id('btnModeSingle').classList.add('btn-outline-light');
@@ -986,6 +1142,7 @@ function init() {
   renderCampaigns();
   renderPlatforms();
   loadHistory();
+  applyVipUI();
 }
 document.addEventListener('DOMContentLoaded', init);
 
