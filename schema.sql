@@ -64,32 +64,6 @@ create index if not exists idx_calculations_user   on public.calculations(user_i
 create index if not exists idx_calculations_sku    on public.calculations(sku);
 create index if not exists idx_bulk_items_batch    on public.bulk_items(calculation_batch_id);
 
--- ═══════════ ระบบสมาชิก Freemium (Free vs VIP) ═══════════
--- สถานะสมาชิกต่อผู้ใช้
-alter table public.users
-  add column if not exists role text not null default 'free' check (role in ('free','vip')),
-  add column if not exists vip_until timestamptz;
-
--- รหัส VIP (วิธีที่ 2: ใช้ Supabase แทน Google Sheet)
-create table if not exists public.vip_keys (
-  id           serial primary key,
-  key          text not null unique,          -- เช่น VIP-ABC123-4821
-  status       text not null default 'active' check (status in ('active','disabled','used')),
-  expires_at   date not null,                 -- วันหมดอายุของสิทธิ์
-  activated_at timestamptz,
-  activated_by uuid references public.users(id),
-  note         text,
-  created_at   timestamptz not null default now()
-);
-
-create index if not exists idx_vip_keys_key on public.vip_keys(key);
-
-alter table public.vip_keys enable row level security;
-
--- ทุกคนตรวจรหัสได้ (activate) — ควรครอบด้วย RPC function ที่ mark used + อัปเดต users.role
-create policy "vip_keys_public_read" on public.vip_keys
-  for select using (true);
-
 -- ── Row Level Security (Supabase) ──
 alter table public.users        enable row level security;
 alter table public.calculations enable row level security;
