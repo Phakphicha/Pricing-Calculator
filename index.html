@@ -102,11 +102,11 @@
               <div class="row g-3 mb-3">
                 <div class="col-6">
                   <label class="form-label fw-bold">ต้นทุนสินค้า (บาท)</label>
-                  <input type="number" step="0.01" class="form-control" id="productCost" value="177.5">
+                  <input type="number" step="0.01" class="form-control" id="productCost" value="200">
                 </div>
                 <div class="col-6">
                   <label class="form-label fw-bold">ค่าแพ็ก/กล่อง (บาท)</label>
-                  <input type="number" step="0.01" class="form-control" id="packCost" value="10">
+                  <input type="number" step="0.01" class="form-control" id="packCost" value="0">
                 </div>
               </div>
 
@@ -120,7 +120,7 @@
 
               <div id="targetProfitBox" class="mb-3">
                 <label class="form-label fw-bold text-success">กำไรสุทธิที่ต้องการต่อชิ้น (บาท)</label>
-                <input type="number" step="0.01" class="form-control border-success" id="targetProfit" value="20">
+                <input type="number" step="0.01" class="form-control border-success" id="targetProfit" value="100">
               </div>
               <div id="sellPriceBox" class="mb-3 d-none">
                 <label class="form-label fw-bold text-primary">ราคาขายปัจจุบัน (บาท)</label>
@@ -133,7 +133,7 @@
               <div class="row g-3">
                 <div class="col-6">
                   <label class="form-label" title="งบโฆษณาเฉลี่ยต่อการขาย 1 ชิ้น (%)">💡 งบโฆษณา (%)</label>
-                  <input type="number" step="0.01" class="form-control" id="adsFee" value="5.00">
+                  <input type="number" step="0.01" class="form-control" id="adsFee" value="3.00">
                 </div>
                 <div class="col-6">
                   <label class="form-label" title="วอลเชอร์/ส่วนลดที่ร้านแบกเอง (%)">🎟️ วอลเชอร์ (%)</label>
@@ -146,12 +146,31 @@
               <h6 class="fw-bold mb-2 text-secondary"><i class="bi bi-layers me-1"></i>หมวดหมู่สินค้า (Preset)</h6>
               <select class="form-select" id="categoryPreset">
                 <option value="fashion">👕 แฟชั่น (Fashion)</option>
-                <option value="electronics">📱 อิเล็กทรอนิกส์ (Electronics)</option>
-                <option value="health" selected>💄 สุขภาพและความงาม (Health & Beauty)</option>
+                <option value="electronics" selected>📱 มือถือและอุปกรณ์เสริม (Electronics)</option>
+                <option value="health">💄 สุขภาพและความงาม (Health & Beauty)</option>
                 <option value="fmcg">🧻 สินค้าอุปโภคบริโภค (FMCG)</option>
                 <option value="custom">📦 กำหนดอัตราเอง</option>
               </select>
               <div class="form-text">เลือกหมวดหมู่เพื่อโหลดอัตราค่าคอมมิชชันมาตรฐานของแต่ละแพลตฟอร์มอัตโนมัติ</div>
+
+              <hr>
+
+              <h6 class="fw-bold mb-2 text-secondary"><i class="bi bi-shop me-1"></i>ตัวเลือกเฉพาะของ Shopee</h6>
+
+              <div class="mb-3">
+                <label class="form-label">ประเภทร้านค้า (กำหนดอัตราคอมมิชชัน)</label>
+                <select class="form-select" id="shopeeSellerType">
+                  <option value="nonmall" selected>ร้านค้าทั่วไป (Non-Mall)</option>
+                  <option value="nonmall_small">ร้านค้าทั่วไป — ผู้ขายรายเล็ก</option>
+                  <option value="mall">Shopee Mall</option>
+                  <option value="mall_small">Shopee Mall — ผู้ขายรายเล็ก</option>
+                </select>
+              </div>
+
+              <div class="mb-1">
+                <label class="form-label">วิธีการชำระเงินของลูกค้า</label>
+                <select class="form-select" id="shopeePayMethod"></select>
+              </div>
             </div>
           </div>
 
@@ -240,12 +259,39 @@
    Multi-Platform Pricing Calculator — Frontend Logic (Vanilla JS)
    ═══════════════════════════════════════════════════════════ */
 
-/* ---------- Preset ค่าธรรมเนียมตามหมวดหมู่ (ค่าอ้างอิง TH 2026) ---------- */
+/* ═══════════════════════════════════════════════════════════════════
+   Preset ค่าธรรมเนียม Shopee (ปรับปรุงตามนโยบายลงวันที่ 4 สิงหาคม 2026)
+   ค่าคอมมิชชัน (รวม VAT 7% แล้ว) แยกตามหมวดหมู่ × ประเภทร้านค้า:
+     nonmall       = ร้านค้าทั่วไป (7.49% – 17.12%)
+     nonmall_small = ร้านค้าทั่วไป ผู้ขายรายเล็ก (6.96% – 15.52%)
+     mall          = Shopee Mall (7.49% – 19.26%)
+     mall_small    = Shopee Mall ผู้ขายรายเล็ก (6.96% – 17.66%)
+   ค่าธรรมเนียมชำระเงิน: ปกติ 3.21% | SPayLater 4.28% – 7.49%
+   ค่าบริการโปรแกรมส่งฟรี/แคชแบ็ก: 3.21% – 5.35% (0% ถ้าไม่เข้าร่วม)
+   ค่าธรรมเนียมโครงสร้างพื้นฐาน: 1.07 บาท/ออเดอร์ (1 บาท + VAT 7%)
+   ═══════════════════════════════════════════════════════════════════ */
+const SHOPEE_COMM_PRESETS = {
+  fashion:     { nonmall: 17.12, nonmall_small: 15.52, mall: 19.26, mall_small: 17.66 },
+  electronics: { nonmall: 16.05, nonmall_small: 14.52, mall: 18.08, mall_small: 16.58 },
+  health:      { nonmall: 14.98, nonmall_small: 13.90, mall: 17.12, mall_small: 16.05 },
+  fmcg:        { nonmall: 7.49,  nonmall_small: 6.96,  mall: 8.56,  mall_small: 7.49  }
+};
+
+/* ค่าธรรมเนียมชำระเงิน Shopee ตามวิธีการชำระ */
+const SHOPEE_PAY_METHODS = [
+  { id: 'normal',    label: 'ชำระปกติ (QR / บัตร / ShopeePay)', pct: 3.21 },
+  { id: 'spl_4',     label: 'SPayLater ผ่อน 3–4 เดือน',          pct: 4.28 },
+  { id: 'spl_6',     label: 'SPayLater ผ่อน 6 เดือน',            pct: 5.35 },
+  { id: 'spl_10',    label: 'SPayLater ผ่อน 9–10 เดือน',         pct: 6.42 },
+  { id: 'spl_12',    label: 'SPayLater ผ่อน 12 เดือน',           pct: 7.49 }
+];
+
+/* Preset ของแพลตฟอร์มอื่น (ค่าอ้างอิง TH 2026) */
 const CATEGORY_PRESETS = {
-  fashion:     { shopee: { c: 4.0, pay: 2.0 }, tiktok: { c: 4.0, pay: 1.6 }, lazada: { c: 3.0, pay: 2.0 } },
-  electronics: { shopee: { c: 5.0, pay: 2.0 }, tiktok: { c: 4.5, pay: 1.6 }, lazada: { c: 4.0, pay: 2.0 } },
-  health:      { shopee: { c: 5.5, pay: 2.0 }, tiktok: { c: 5.0, pay: 1.6 }, lazada: { c: 4.5, pay: 2.0 } },
-  fmcg:        { shopee: { c: 3.0, pay: 2.0 }, tiktok: { c: 3.0, pay: 1.6 }, lazada: { c: 2.5, pay: 2.0 } }
+  fashion:     { tiktok: { c: 4.0, pay: 1.6 }, lazada: { c: 3.0, pay: 2.0 } },
+  electronics: { tiktok: { c: 4.5, pay: 1.6 }, lazada: { c: 4.0, pay: 2.0 } },
+  health:      { tiktok: { c: 5.0, pay: 1.6 }, lazada: { c: 4.5, pay: 2.0 } },
+  fmcg:        { tiktok: { c: 3.0, pay: 1.6 }, lazada: { c: 2.5, pay: 2.0 } }
 };
 
 /* ---------- นิยามแพลตฟอร์ม ---------- */
@@ -254,7 +300,7 @@ const PLATFORMS = [
     id: 'shopee', name: 'Shopee', cls: 'pc-shopee', enabled: true,
     campaignLabel: 'Shopee ส่งฟรีพิเศษ / เหรียญแคชแบ็ก',
     campaignOn: true, campaignPct: 5.35,
-    commissionPct: 5.5, paymentPct: 2.0, servicePct: 0, infraFee: 1.07,
+    commissionPct: 16.05, paymentPct: 3.21, servicePct: 0, infraFee: 1.07,
     custom: false, showFees: false, open: false
   },
   {
@@ -449,17 +495,28 @@ function renderCharts() {
 
 /* ---------- แคมเปญ toggles ---------- */
 function renderCampaigns() {
-  $id('campaignList').innerHTML = PLATFORMS.map(p => `
+  $id('campaignList').innerHTML = PLATFORMS.map(p => {
+    // Shopee: ให้เลือกระดับค่าบริการโปรแกรมได้ (3.21% – 5.35%)
+    const pctCtrl = p.id === 'shopee'
+      ? `<select class="form-select form-select-sm mt-1" style="max-width:150px" onchange="setCampaignPct('${p.id}', this.value)">
+           ${[3.21, 4.28, 5.35].map(v => `<option value="${v}" ${p.campaignPct === v ? 'selected' : ''}>${v}%</option>`).join('')}
+         </select>`
+      : `<div class="text-secondary" style="font-size:.78rem">ค่าบริการเพิ่ม ${p.campaignPct}% ของราคาขาย</div>`;
+    return `
     <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
       <div>
         <div class="small">${p.campaignLabel}</div>
-        <div class="text-secondary" style="font-size:.78rem">ค่าบริการเพิ่ม ${p.campaignPct}% ของราคาขาย</div>
+        ${pctCtrl}
       </div>
       <div class="form-check form-switch ms-2">
         <input class="form-check-input" type="checkbox" role="switch" id="camp-${p.id}" ${p.campaignOn ? 'checked' : ''}
                onchange="toggleCampaign('${p.id}', this.checked)">
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
+}
+function setCampaignPct(id, val) {
+  PLATFORMS.find(x => x.id === id).campaignPct = num(val); renderPlatforms();
 }
 
 /* ---------- Interactions ---------- */
@@ -486,11 +543,31 @@ function toggleBreakdown(id) {
 function applyPreset() {
   const cat = $id('categoryPreset').value;
   const preset = CATEGORY_PRESETS[cat];
-  if (!preset) return; // 'custom' = กำหนดเอง
-  PLATFORMS.forEach(p => {
-    const v = preset[p.id];
-    if (v && !p.custom) { p.commissionPct = v.c; p.paymentPct = v.pay; }
-  });
+
+  // แพลตฟอร์มอื่น (TikTok / Lazada)
+  if (preset) {
+    PLATFORMS.forEach(p => {
+      const v = preset[p.id];
+      if (v && !p.custom) { p.commissionPct = v.c; p.paymentPct = v.pay; }
+    });
+  }
+
+  // Shopee: คอมมิชชันตาม หมวดหมู่ × ประเภทร้านค้า (นโยบาย 4 ส.ค. 2026)
+  const shopee = PLATFORMS.find(p => p.id === 'shopee');
+  const shopeePreset = SHOPEE_COMM_PRESETS[cat];
+  if (shopeePreset) {
+    shopee.commissionPct = shopeePreset[$id('shopeeSellerType').value];
+  }
+  // ค่าธรรมเนียมชำระเงินตามวิธีการชำระที่เลือก
+  const payMethod = SHOPEE_PAY_METHODS.find(m => m.id === $id('shopeePayMethod').value) || SHOPEE_PAY_METHODS[0];
+  shopee.paymentPct = payMethod.pct;
+
+  renderPlatforms();
+}
+function applyShopeePayMethod() {
+  const shopee = PLATFORMS.find(p => p.id === 'shopee');
+  const payMethod = SHOPEE_PAY_METHODS.find(m => m.id === $id('shopeePayMethod').value) || SHOPEE_PAY_METHODS[0];
+  shopee.paymentPct = payMethod.pct;
   renderPlatforms();
 }
 
@@ -678,6 +755,13 @@ function init() {
   });
 
   $id('categoryPreset').addEventListener('change', applyPreset);
+  $id('shopeeSellerType').addEventListener('change', applyPreset);
+  $id('shopeePayMethod').addEventListener('change', applyShopeePayMethod);
+
+  // สร้างตัวเลือกวิธีชำระเงิน Shopee (ปกติ 3.21% / SPayLater 4.28–7.49%)
+  $id('shopeePayMethod').innerHTML = SHOPEE_PAY_METHODS
+    .map(m => `<option value="${m.id}" ${m.id === 'normal' ? 'selected' : ''}>${m.label} — ${m.pct}%</option>`).join('');
+
   $id('btnSave').addEventListener('click', saveToSheet);
   $id('btnExportCSV').addEventListener('click', exportSingleCSV);
   $id('btnShare').addEventListener('click', shareCalc);
