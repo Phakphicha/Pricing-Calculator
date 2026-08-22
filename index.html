@@ -1,417 +1,725 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>เครื่องมือคำนวณราคาขาย Multi-Platform | Shopee · TikTok · Lazada</title>
-  <meta name="description" content="คำนวณราคาขาย กำไร และค่าธรรมเนียมของ Shopee, TikTok Shop, Lazada และแพลตฟอร์มอื่นแบบเทียบข้างกัน" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Multi-Platform Pricing Calculator Web App</title>
 
-  <!-- Fonts (Kanit) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- PWA & Mobile Web App Meta Tags -->
+  <meta name="theme-color" content="#EE4D2D">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Pricing Calc">
+  <meta name="application-name" content="Multi-Platform Pricing Calculator">
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: { kanit: ['Kanit', 'sans-serif'] },
-        }
-      }
-    }
-  </script>
+  <!-- Favicon & Touch Icons -->
+  <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1NtrGos_fPqyMJcmIPH_6kiAVAzi8bd_t">
+  <link rel="apple-touch-icon" href="https://lh3.googleusercontent.com/d/1NtrGos_fPqyMJcmIPH_6kiAVAzi8bd_t">
 
-  <!-- Chart.js -->
+  <!-- Bootstrap 5 & Icons & Fonts & SweetAlert2 & Chart.js -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <!-- Alpine.js -->
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <link rel="stylesheet" href="styles.css" />
+  <style>
+    body { font-family: 'Kanit', sans-serif; background-color: #f4f6f8; color: #333; }
+    .navbar-brand img { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; }
+    .navbar { background: linear-gradient(90deg, #EE4D2D 0%, #d6249f 60%, #1da1f2 100%); }
+
+    .platform-card { border-radius: 14px; color: #fff; padding: 18px; box-shadow: 0 4px 14px rgba(15,23,42,.12); transition: transform .15s; }
+    .platform-card:hover { transform: translateY(-3px); }
+    .pc-shopee  { background: linear-gradient(135deg, #ee4d2d, #ff7337); }
+    .pc-tiktok  { background: linear-gradient(135deg, #161823, #0f4c4c); }
+    .pc-lazada  { background: linear-gradient(135deg, #0f163d, #1a4fd6); }
+    .pc-custom  { background: linear-gradient(135deg, #6d28d9, #475569); }
+    .platform-card.disabled { filter: grayscale(.9); opacity: .55; }
+
+    .price-big { font-size: 2rem; font-weight: 700; line-height: 1.1; }
+    .result-box { background-color: rgba(255,255,255,.12); border-radius: 12px; }
+
+    .form-switch .form-check-input { cursor: pointer; }
+    .form-check-input:checked { background-color: #10b981; border-color: #10b981; }
+
+    .btn-shopee { background-color: #EE4D2D; color: #fff; font-weight: 500; }
+    .btn-shopee:hover { background-color: #d73d1e; color: #fff; }
+    .btn-install { background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.4); color: #fff; font-size: .85rem; }
+    .btn-install:hover { background: #fff; color: #EE4D2D; }
+
+    .breakdown-item { display: flex; justify-content: space-between; font-size: .875rem; padding: .25rem 0; }
+    .breakdown-total { border-top: 1px solid rgba(255,255,255,.3); margin-top: .35rem; padding-top: .4rem; font-weight: 600; }
+
+    .bulk-price { font-weight: 600; }
+    .bulk-warn { color: #dc3545; font-weight: 600; }
+
+    table.sticky-head thead th { position: sticky; top: 0; background: #fff; z-index: 1; }
+  </style>
 </head>
+<body>
 
-<body class="font-kanit bg-slate-100 text-slate-800 min-h-screen" x-data="pricingApp()" x-init="init()">
-
-  <!-- ═══════════════ HEADER ═══════════════ -->
-  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur border-b border-slate-200 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
-      <!-- Logo -->
-      <div class="flex items-center gap-2.5 mr-auto">
-        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 via-pink-500 to-indigo-600 flex items-center justify-center text-white shrink-0">
-          <i data-lucide="calculator" class="w-5 h-5"></i>
-        </div>
-        <div class="leading-tight">
-          <h1 class="font-semibold text-slate-900 text-sm sm:text-base">เครื่องมือคำนวณราคาขาย Multi-Platform</h1>
-          <p class="text-[11px] sm:text-xs text-slate-500">Shopee · TikTok Shop · Lazada · ช่องทางอื่น</p>
-        </div>
-      </div>
-
-      <!-- Fee update badge -->
-      <span class="inline-flex items-center gap-1.5 text-xs bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full">
-        <i data-lucide="badge-check" class="w-3.5 h-3.5"></i>
-        อัปเดตค่าธรรมเนียมล่าสุด 2026
+  <!-- ═══════════ NAVBAR ═══════════ -->
+  <nav class="navbar shadow-sm mb-4">
+    <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2 py-2">
+      <span class="navbar-brand text-white fw-bold d-flex align-items-center gap-2 mb-0">
+        <img src="https://lh3.googleusercontent.com/d/1NtrGos_fPqyMJcmIPH_6kiAVAzi8bd_t" alt="Logo">
+        <span>เครื่องมือคำนวณราคาขาย Multi-Platform</span>
       </span>
-
-      <!-- Mode toggle -->
-      <div class="flex bg-slate-100 rounded-lg p-1 text-sm">
-        <button @click="mode='single'"
-                :class="mode==='single' ? 'bg-white shadow text-slate-900' : 'text-slate-500'"
-                class="px-3 py-1.5 rounded-md flex items-center gap-1.5 transition">
-          <i data-lucide="box" class="w-4 h-4"></i> สินค้าชิ้นเดียว
-        </button>
-        <button @click="mode='bulk'"
-                :class="mode==='bulk' ? 'bg-white shadow text-slate-900' : 'text-slate-500'"
-                class="px-3 py-1.5 rounded-md flex items-center gap-1.5 transition">
-          <i data-lucide="table-2" class="w-4 h-4"></i> หลายสินค้า (Bulk)
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span class="badge bg-success-subtle text-success border border-success-subtle d-none d-md-inline-flex">
+          <i class="bi bi-patch-check-fill me-1"></i>อัปเดตค่าธรรมเนียมล่าสุด 2026
+        </span>
+        <div class="btn-group btn-group-sm" role="group">
+          <button type="button" class="btn btn-light active" id="btnModeSingle"><i class="bi bi-box-seam me-1"></i>สินค้าชิ้นเดียว</button>
+          <button type="button" class="btn btn-outline-light" id="btnModeBulk"><i class="bi bi-table me-1"></i>หลายสินค้า (Bulk)</button>
+        </div>
+        <button id="btnInstallApp" class="btn btn-install btn-sm rounded-pill px-3 d-none">
+          <i class="bi bi-download me-1"></i>ติดตั้งแอป
         </button>
       </div>
     </div>
-  </header>
+  </nav>
 
-  <main class="max-w-7xl mx-auto px-4 py-6">
+  <div class="container mb-5">
 
-    <!-- ═══════════════ SINGLE MODE ═══════════════ -->
-    <template x-if="mode==='single'">
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- ═══════════ MODE: SINGLE ═══════════ -->
+    <div id="singleMode">
+      <div class="row g-4">
 
-      <!-- ── LEFT: INPUT PANEL ── -->
-      <section class="lg:col-span-4 space-y-4">
-
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-          <h2 class="font-semibold text-slate-900 mb-4 flex items-center gap-2">
-            <i data-lucide="settings-2" class="w-4.5 h-4.5 text-slate-400"></i> ข้อมูลสินค้าและต้นทุน
-          </h2>
-
-          <!-- SKU name -->
-          <label class="block text-sm text-slate-600 mb-1">ชื่อสินค้า / SKU</label>
-          <input type="text" x-model="form.sku" placeholder="เช่น เสื้อยืดคอกลม สีดำ"
-                 class="input-field mb-4" />
-
-          <!-- Costs -->
-          <div class="grid grid-cols-2 gap-3 mb-4">
-            <div>
-              <label class="block text-sm text-slate-600 mb-1">ต้นทุนสินค้า (บาท)</label>
-              <div class="relative">
-                <input type="number" min="0" step="0.01" x-model.number="form.cost" class="input-field pr-8" />
-                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">฿</span>
-              </div>
+        <!-- ── LEFT: INPUT ── -->
+        <div class="col-lg-4">
+          <div class="card shadow-sm border-0 rounded-3 mb-4">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+              <h5 class="mb-0 fw-semibold"><i class="bi bi-pencil-square me-2 text-secondary"></i>ข้อมูลสินค้าและต้นทุน</h5>
             </div>
-            <div>
-              <label class="block text-sm text-slate-600 mb-1">กล่อง/บรรจุภัณฑ์ (บาท)</label>
-              <div class="relative">
-                <input type="number" min="0" step="0.01" x-model.number="form.packaging" class="input-field pr-8" />
-                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">฿</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Calc-mode toggle -->
-          <div class="flex bg-slate-100 rounded-lg p-1 text-sm mb-4">
-            <button @click="form.calcMode='target'"
-                    :class="form.calcMode==='target' ? 'bg-white shadow text-emerald-700' : 'text-slate-500'"
-                    class="flex-1 px-3 py-1.5 rounded-md transition">
-              🎯 ตั้งกำไร → หาราคาขาย
-            </button>
-            <button @click="form.calcMode==='evaluate'"
-                    :class="form.calcMode==='evaluate' ? 'bg-white shadow text-indigo-700' : 'text-slate-500'"
-                    class="flex-1 px-3 py-1.5 rounded-md transition">
-              📊 ใส่ราคา → ดูกำไร
-            </button>
-          </div>
-
-          <!-- Target profit OR price -->
-          <div x-show="form.calcMode==='target'">
-            <label class="block text-sm text-slate-600 mb-1">กำไรที่ต้องการ (บาท/ชิ้น)</label>
-            <div class="relative">
-              <input type="number" min="0" step="0.01" x-model.number="form.targetProfit" class="input-field pr-8" />
-              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">฿</span>
-            </div>
-          </div>
-          <div x-show="form.calcMode==='evaluate'" x-cloak>
-            <label class="block text-sm text-slate-600 mb-1">ราคาขายปัจจุบัน (บาท)</label>
-            <div class="relative">
-              <input type="number" min="0" step="0.01" x-model.number="form.sellPrice" class="input-field pr-8" />
-              <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none">฿</span>
-            </div>
-          </div>
-
-          <!-- Ads & voucher buffer -->
-          <div class="grid grid-cols-2 gap-3 mt-4">
-            <div>
-              <label class="block text-sm text-slate-600 mb-1" title="งบโฆษณาที่ตั้งไว้ต่อการขาย 1 ชิ้น (เป็น % ของราคาขาย)">💡 งบโฆษณา (%)</label>
-              <input type="number" min="0" max="100" step="0.5" x-model.number="form.adsPct" class="input-field" />
-            </div>
-            <div>
-              <label class="block text-sm text-slate-600 mb-1" title="ส่วนลด/วอลเชอร์ที่ต้องแบกเอง (%)">🎟️ วอลเชอร์ (%)</label>
-              <input type="number" min="0" max="100" step="0.5" x-model.number="form.voucherPct" class="input-field" />
-            </div>
-          </div>
-        </div>
-
-        <!-- Category preset -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-          <h3 class="font-semibold text-slate-900 mb-3 flex items-center gap-2">
-            <i data-lucide="layers" class="w-4 h-4 text-slate-400"></i> หมวดหมู่สินค้า (Preset)
-          </h3>
-          <select x-model="form.category" @change="applyCategoryPreset()" class="input-field mb-3">
-            <option value="fashion">👕 แฟชั่น (Fashion)</option>
-            <option value="electronics">📱 อิเล็กทรอนิกส์ (Electronics)</option>
-            <option value="health">💄 สุขภาพและความงาม (Health & Beauty)</option>
-            <option value="fmcg">🧻 สินค้าอุปโภคบริโภค (FMCG)</option>
-            <option value="other">📦 อื่น ๆ (กำหนดเอง)</option>
-          </select>
-          <p class="text-xs text-slate-500">เลือกหมวดหมู่เพื่อโหลดอัตราค่าคอมมิชชันมาตรฐานของแต่ละแพลตฟอร์มโดยอัตโนมัติ</p>
-        </div>
-
-        <!-- Platform toggles -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-3">
-          <h3 class="font-semibold text-slate-900 flex items-center gap-2">
-            <i data-lucide="toggle-right" class="w-4 h-4 text-slate-400"></i> แคมเปญแพลตฟอร์ม
-          </h3>
-          <template x-for="p in platforms" :key="p.id">
-            <div class="flex items-center justify-between gap-3 py-1.5">
-              <div>
-                <p class="text-sm text-slate-700" x-text="p.labelCampaign"></p>
-                <p class="text-xs text-slate-400" x-text="'ค่าบริการเพิ่ม ' + p.campaignPct + '%'" x-show="p.hasCampaign"></p>
-              </div>
-              <label class="toggle-switch" x-show="p.hasCampaign">
-                <input type="checkbox" x-model="p.campaignOn" />
-                <span class="slider"></span>
-              </label>
-              <span class="text-xs text-slate-300" x-show="!p.hasCampaign">–</span>
-            </div>
-          </template>
-        </div>
-      </section>
-
-      <!-- ── RIGHT: COMPARISON GRID ── -->
-      <section class="lg:col-span-8 space-y-4">
-
-        <!-- Global warnings -->
-        <div x-show="globalWarning" x-cloak x-transition
-             class="rounded-xl bg-amber-50 border border-amber-300 text-amber-800 px-4 py-3 text-sm flex items-start gap-2">
-          <i data-lucide="alert-triangle" class="w-5 h-5 shrink-0 mt-0.5"></i>
-          <span x-text="globalWarning"></span>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <template x-for="p in platforms" :key="p.id">
-            <div :class="p.cardClass + ' platform-card'">
-              <!-- Card header -->
-              <div class="flex items-center justify-between mb-3">
-                <div class="flex items-center gap-2">
-                  <span :class="p.iconBgClass + ' w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold'">
-                    <span x-text="p.short"></span>
-                  </span>
-                  <div>
-                    <h3 class="font-semibold text-white" x-text="p.enabled ? p.name : p.name + ' (ปิดใช้งาน)'"></h3>
-                    <label class="flex items-center gap-1.5 text-[11px] text-white/70 cursor-pointer">
-                      <input type="checkbox" x-model="p.enabled" class="accent-white" /> เปิดเปรียบเทียบช่องทางนี้
-                    </label>
-                  </div>
-                </div>
-                <label class="toggle-switch" x-show="p.customizable" title="เปิดใช้งานช่องทางนี้">
-                  <input type="checkbox" x-model="p.enabled" /><span class="slider"></span>
-                </label>
+            <div class="card-body p-4">
+              <div class="mb-3">
+                <label class="form-label fw-bold">ชื่อสินค้า / รหัส SKU</label>
+                <input type="text" class="form-control" id="productName" placeholder="เช่น น้ำเกลือ Normal Saline 500ml">
               </div>
 
-              <template x-if="p.enabled">
-              <div>
-                <!-- Custom platform name/fees -->
-                <div x-show="p.customizable && p.showSetting" class="bg-black/20 rounded-xl p-3 mb-3 space-y-2">
-                  <input type="text" x-model="p.name" placeholder="ชื่อช่องทาง เช่น LINE SHOPPING"
-                         class="input-field-dark text-sm" />
-                  <div class="grid grid-cols-3 gap-2">
-                    <div>
-                      <label class="text-[11px] text-white/70">คอมฯ (%)</label>
-                      <input type="number" min="0" max="100" step="0.1" x-model.number="p.commissionPct" class="input-field-dark" />
-                    </div>
-                    <div>
-                      <label class="text-[11px] text-white/70">ชำระเงิน (%)</label>
-                      <input type="number" min="0" max="100" step="0.1" x-model.number="p.paymentPct" class="input-field-dark" />
-                    </div>
-                    <div>
-                      <label class="text-[11px] text-white/70">ค่าธรรมเนียม (฿)</label>
-                      <input type="number" min="0" step="0.01" x-model.number="p.fixedFee" class="input-field-dark" />
-                    </div>
-                  </div>
+              <div class="row g-3 mb-3">
+                <div class="col-6">
+                  <label class="form-label fw-bold">ต้นทุนสินค้า (บาท)</label>
+                  <input type="number" step="0.01" class="form-control" id="productCost" value="177.5">
                 </div>
-
-                <!-- Headline number -->
-                <div class="bg-white/10 rounded-xl p-4 mb-3">
-                  <template x-if="form.calcMode==='target'">
-                    <div>
-                      <p class="text-xs text-white/70 mb-0.5">ราคาขายที่แนะนำ</p>
-                      <p class="text-3xl font-bold text-white">
-                        ฿<span x-text="fmt(result(p).price)"></span>
-                      </p>
-                      <p class="text-xs text-white/60 mt-1">รวมกำไรเป้าหมาย ฿<span x-text="fmt(form.targetProfit)"></span> /ชิ้น</p>
-                    </div>
-                  </template>
-                  <template x-if="form.calcMode==='evaluate'">
-                    <div>
-                      <p class="text-xs text-white/70 mb-0.5">กำไรสุทธิ (ขาย ณ ราคานี้)</p>
-                      <p class="text-3xl font-bold" :class="result(p).profit < 0 ? 'text-red-300' : 'text-emerald-300'">
-                        ฿<span x-text="fmt(result(p).profit)"></span>
-                      </p>
-                      <p class="text-xs text-white/60 mt-1">อัตรากำไร <span x-text="fmt(result(p).marginPct)"></span>% ของราคาขาย</p>
-                    </div>
-                  </template>
-                </div>
-
-                <!-- Loss warning -->
-                <div x-show="result(p).warning" x-text="result(p).warning"
-                     class="text-xs bg-red-500/20 border border-red-400/40 text-red-100 rounded-lg px-3 py-2 mb-3"></div>
-
-                <!-- Donut chart -->
-                <div class="bg-white rounded-xl p-3 mb-3">
-                  <canvas :id="'chart-' + p.id" height="180"></canvas>
-                </div>
-
-                <!-- Breakdown accordion -->
-                <button @click="p.open = !p.open"
-                        class="w-full flex items-center justify-between text-sm text-white/90 hover:text-white py-1.5">
-                  <span class="flex items-center gap-1.5"><i data-lucide="receipt" class="w-4 h-4"></i> รายละเอียดการหักค่าธรรมเนียม</span>
-                  <i data-lucide="chevron-down" class="w-4 h-4 transition-transform" :class="p.open && 'rotate-180'"></i>
-                </button>
-                <div x-show="p.open" x-collapse x-cloak class="mt-2 bg-black/20 rounded-xl p-3 text-sm space-y-1.5 text-white/90">
-                  <div class="flex justify-between"><span>ค่าคอมมิชชัน (<span x-text="p.commissionPct"></span>%)</span><span>-฿<span x-text="fmt(result(p).commissionFee)"></span></span></div>
-                  <div class="flex justify-between"><span>ค่าธรรมเนียมการชำระเงิน (<span x-text="p.paymentPct"></span>%)</span><span>-฿<span x-text="fmt(result(p).paymentFee)"></span></span></div>
-                  <div class="flex justify-between" x-show="p.servicePct > 0"><span>ค่าบริการอื่น ๆ (<span x-text="p.servicePct"></span>%)</span><span>-฿<span x-text="fmt(result(p).serviceFee)"></span></span></div>
-                  <div class="flex justify-between" x-show="p.campaignOn && p.hasCampaign"><span>ค่าแคมเปญ (<span x-text="p.campaignPct"></span>%)</span><span>-฿<span x-text="fmt(result(p).campaignFee)"></span></span></div>
-                  <div class="flex justify-between" x-show="p.fixedFee > 0"><span>ค่าธรรมเนียมแพลตฟอร์ม (฿)</span><span>-฿<span x-text="fmt(p.fixedFee)"></span></span></div>
-                  <div class="flex justify-between" x-show="result(p).adsFee > 0"><span>งบโฆษณา + วอลเชอร์</span><span>-฿<span x-text="fmt(result(p).adsFee)"></span></span></div>
-                  <div class="flex justify-between"><span>ต้นทุนสินค้า + บรรจุภัณฑ์</span><span>-฿<span x-text="fmt(form.cost + form.packaging)"></span></span></div>
-                  <div class="border-t border-white/15 my-1"></div>
-                  <div class="flex justify-between font-semibold text-white"><span>กำไรสุทธิ</span><span>฿<span x-text="fmt(result(p).profit)"></span></span></div>
-                  <div class="flex justify-between text-white/70"><span>ต้นทุนรวมต่อชิ้น</span><span>฿<span x-text="fmt(result(p).totalCost)"></span></span></div>
-                  <button x-show="p.customizable" @click="p.showSetting = !p.showSetting"
-                          class="mt-2 text-xs underline text-white/80 hover:text-white">แก้ไขค่าธรรมเนียมของช่องทางนี้</button>
+                <div class="col-6">
+                  <label class="form-label fw-bold">ค่าแพ็ก/กล่อง (บาท)</label>
+                  <input type="number" step="0.01" class="form-control" id="packCost" value="10">
                 </div>
               </div>
-              </template>
+
+              <!-- โหมดคำนวณ -->
+              <div class="btn-group w-100 mb-3" role="group" id="calcModeGroup">
+                <input type="radio" class="btn-check" name="calcMode" id="modeTarget" value="target" checked>
+                <label class="btn btn-outline-success" for="modeTarget"><i class="bi bi-bullseye me-1"></i>ตั้งกำไร → หาราคาขาย</label>
+                <input type="radio" class="btn-check" name="calcMode" id="modeEvaluate" value="evaluate">
+                <label class="btn btn-outline-primary" for="modeEvaluate"><i class="bi bi-graph-up me-1"></i>ใส่ราคา → ดูกำไร</label>
+              </div>
+
+              <div id="targetProfitBox" class="mb-3">
+                <label class="form-label fw-bold text-success">กำไรสุทธิที่ต้องการต่อชิ้น (บาท)</label>
+                <input type="number" step="0.01" class="form-control border-success" id="targetProfit" value="20">
+              </div>
+              <div id="sellPriceBox" class="mb-3 d-none">
+                <label class="form-label fw-bold text-primary">ราคาขายปัจจุบัน (บาท)</label>
+                <input type="number" step="0.01" class="form-control border-primary" id="sellPrice" value="250">
+              </div>
+
+              <hr>
+
+              <h6 class="fw-bold mb-3 text-secondary"><i class="bi bi-percent me-1"></i>อัตราส่วนเพิ่มเติม (%)</h6>
+              <div class="row g-3">
+                <div class="col-6">
+                  <label class="form-label" title="งบโฆษณาเฉลี่ยต่อการขาย 1 ชิ้น (%)">💡 งบโฆษณา (%)</label>
+                  <input type="number" step="0.01" class="form-control" id="adsFee" value="5.00">
+                </div>
+                <div class="col-6">
+                  <label class="form-label" title="วอลเชอร์/ส่วนลดที่ร้านแบกเอง (%)">🎟️ วอลเชอร์ (%)</label>
+                  <input type="number" step="0.01" class="form-control" id="voucherFee" value="0">
+                </div>
+              </div>
+
+              <hr>
+
+              <h6 class="fw-bold mb-2 text-secondary"><i class="bi bi-layers me-1"></i>หมวดหมู่สินค้า (Preset)</h6>
+              <select class="form-select" id="categoryPreset">
+                <option value="fashion">👕 แฟชั่น (Fashion)</option>
+                <option value="electronics">📱 อิเล็กทรอนิกส์ (Electronics)</option>
+                <option value="health" selected>💄 สุขภาพและความงาม (Health & Beauty)</option>
+                <option value="fmcg">🧻 สินค้าอุปโภคบริโภค (FMCG)</option>
+                <option value="custom">📦 กำหนดอัตราเอง</option>
+              </select>
+              <div class="form-text">เลือกหมวดหมู่เพื่อโหลดอัตราค่าคอมมิชชันมาตรฐานของแต่ละแพลตฟอร์มอัตโนมัติ</div>
             </div>
-          </template>
-        </div>
-
-        <!-- ── ACTION BAR ── -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 flex flex-wrap gap-3">
-          <button @click="saveHistory()" class="btn-primary bg-indigo-600 hover:bg-indigo-700">
-            <i data-lucide="save" class="w-4 h-4"></i> บันทึกประวัติ
-          </button>
-          <button @click="exportSingleCSV()" class="btn-primary bg-emerald-600 hover:bg-emerald-700">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> ส่งออก Excel (CSV)
-          </button>
-          <button @click="shareCalc()" class="btn-primary bg-slate-700 hover:bg-slate-800">
-            <i data-lucide="share-2" class="w-4 h-4"></i> แชร์การคำนวณ
-          </button>
-        </div>
-
-        <!-- ── HISTORY ── -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5" x-show="history.length" x-cloak>
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="font-semibold text-slate-900 flex items-center gap-2">
-              <i data-lucide="history" class="w-4 h-4 text-slate-400"></i> ประวัติการคำนวณ
-            </h3>
-            <button @click="clearHistory()" class="text-xs text-red-600 hover:underline">ล้างทั้งหมด</button>
           </div>
-          <div class="overflow-x-auto text-sm">
-            <table class="w-full text-left">
-              <thead class="text-slate-500 text-xs border-b">
-                <tr><th class="py-2">วันที่</th><th>สินค้า</th><th>ราคาขายแนะนำ</th><th>กำไรสุทธิ</th><th>ช่องทาง</th><th></th></tr>
-              </thead>
-              <tbody>
-                <template x-for="(h, i) in history" :key="i">
-                  <tr class="border-b last:border-0 hover:bg-slate-50">
-                    <td class="py-2 text-slate-500 whitespace-nowrap" x-text="h.date"></td>
-                    <td x-text="h.sku || '—'"></td>
-                    <td class="font-medium">฿<span x-text="fmt(h.price)"></span></td>
-                    <td :class="h.profit < 0 ? 'text-red-600' : 'text-emerald-600'">฿<span x-text="fmt(h.profit)"></span></td>
-                    <td class="text-slate-500" x-text="h.platform"></td>
-                    <td><button @click="history.splice(i,1)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
-                  </tr>
-                </template>
-              </tbody>
+
+          <!-- แคมเปญ toggle -->
+          <div class="card shadow-sm border-0 rounded-3">
+            <div class="card-header bg-white py-3">
+              <h5 class="mb-0 fw-semibold"><i class="bi bi-toggle-on me-2 text-secondary"></i>แคมเปญแพลตฟอร์ม</h5>
+            </div>
+            <div class="card-body p-4 pt-2" id="campaignList"></div>
+          </div>
+        </div>
+
+        <!-- ── RIGHT: COMPARISON GRID ── -->
+        <div class="col-lg-8">
+          <div id="globalWarning" class="alert alert-warning d-none" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i><span id="globalWarningText"></span>
+          </div>
+
+          <div class="row g-3" id="platformGrid"></div>
+
+          <!-- ACTION BAR -->
+          <div class="card shadow-sm border-0 rounded-3 mt-3">
+            <div class="card-body p-3 d-flex flex-wrap gap-2">
+              <button type="button" class="btn btn-shopee flex-grow-1" id="btnSave">
+                <i class="bi bi-cloud-arrow-up-fill me-1"></i>บันทึกลง Google Sheet
+              </button>
+              <button type="button" class="btn btn-success flex-grow-1" id="btnExportCSV">
+                <i class="bi bi-file-earmark-excel me-1"></i>ส่งออก CSV
+              </button>
+              <button type="button" class="btn btn-dark flex-grow-1" id="btnShare">
+                <i class="bi bi-share me-1"></i>แชร์ผลคำนวณ
+              </button>
+            </div>
+          </div>
+
+          <!-- HISTORY -->
+          <div class="card shadow-sm border-0 rounded-3 mt-3 d-none" id="historyCard">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+              <h5 class="mb-0 fw-semibold"><i class="bi bi-clock-history me-2 text-secondary"></i>ประวัติการบันทึกล่าสุด (Google Sheet)</h5>
+            </div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-sm table-hover mb-0">
+                  <thead class="table-light"><tr>
+                    <th>วันที่</th><th>สินค้า</th><th>แพลตฟอร์ม</th><th>ราคาขาย</th><th>กำไรสุทธิ</th>
+                  </tr></thead>
+                  <tbody id="historyBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ MODE: BULK ═══════════ -->
+    <div id="bulkMode" class="d-none">
+      <div class="card shadow-sm border-0 rounded-3">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <h5 class="mb-0 fw-semibold"><i class="bi bi-table me-2 text-secondary"></i>คำนวณหลายสินค้า (SKU Management)</h5>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary btn-sm" id="btnAddBulkRow"><i class="bi bi-plus-lg me-1"></i>เพิ่มสินค้า</button>
+            <button type="button" class="btn btn-success btn-sm" id="btnExportBulkCSV"><i class="bi bi-file-earmark-excel me-1"></i>ส่งออก CSV</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <p class="text-secondary small">ใช้โหมด "ตั้งกำไร → หาราคาขาย" พร้อมค่าธรรมเนียมตามหมวดหมู่และแคมเปญที่ตั้งไว้ในหน้าหลัก</p>
+          <div class="table-responsive" style="max-height: 60vh;">
+            <table class="table table-hover align-middle sticky-head">
+              <thead><tr id="bulkHead"></tr></thead>
+              <tbody id="bulkBody"></tbody>
             </table>
           </div>
+          <div id="bulkEmpty" class="text-center text-secondary py-5">ยังไม่มีรายการ — กด "เพิ่มสินค้า" เพื่อเริ่มต้น</div>
         </div>
-      </section>
+      </div>
     </div>
-    </template>
+  </div>
 
-    <!-- ═══════════════ BULK MODE ═══════════════ -->
-    <template x-if="mode==='bulk'">
-    <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-      <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h2 class="font-semibold text-slate-900 flex items-center gap-2">
-          <i data-lucide="table-2" class="w-5 h-5 text-slate-400"></i> คำนวณหลายสินค้า (SKU Management)
-        </h2>
-        <div class="flex gap-2">
-          <button @click="addBulkRow()" class="btn-primary bg-indigo-600 hover:bg-indigo-700">
-            <i data-lucide="plus" class="w-4 h-4"></i> เพิ่มสินค้า
-          </button>
-          <button @click="exportBulkCSV()" class="btn-primary bg-emerald-600 hover:bg-emerald-700">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> ส่งออก CSV
-          </button>
-        </div>
-      </div>
-
-      <p class="text-xs text-slate-500 mb-3">* ใช้กำไรเป้าหมายแบบ "ตั้งกำไร → หาราคาขาย" และค่าธรรมเนียมตามหมวดหมู่ / แคมเปญที่ตั้งไว้ในหน้าสินค้าชิ้นเดียว</p>
-
-      <div class="overflow-x-auto text-sm">
-        <table class="w-full min-w-[900px] text-left">
-          <thead class="text-slate-500 text-xs border-b">
-            <tr>
-              <th class="py-2">SKU</th>
-              <th>ต้นทุน (฿)</th>
-              <th>บรรจุภัณฑ์ (฿)</th>
-              <th>กำไรเป้าหมาย (฿)</th>
-              <template x-for="p in platforms" :key="p.id">
-                <th x-show="p.enabled" class="text-center" x-text="p.short + ' ราคาขาย'"></th>
-              </template>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <template x-for="(row, i) in bulkRows" :key="i">
-              <tr class="border-b last:border-0 hover:bg-slate-50">
-                <td class="py-1.5 pr-2"><input type="text" x-model="row.sku" placeholder="ชื่อสินค้า" class="input-field min-w-[140px]" /></td>
-                <td><input type="number" min="0" step="0.01" x-model.number="row.cost" class="input-field w-24" /></td>
-                <td><input type="number" min="0" step="0.01" x-model.number="row.packaging" class="input-field w-24" /></td>
-                <td><input type="number" min="0" step="0.01" x-model.number="row.targetProfit" class="input-field w-24" /></td>
-                <template x-for="p in platforms" :key="p.id">
-                  <td x-show="p.enabled" class="text-center font-semibold"
-                      :class="bulkRowResult(row, p).warning ? 'text-red-600' : 'text-slate-800'">
-                    <span x-text="fmt(bulkRowResult(row, p).price)"></span>
-                    <div class="text-[10px] font-normal text-slate-400" x-text="'กำไร ' + fmt(bulkRowResult(row, p).marginPct) + '%'" x-show="!bulkRowResult(row, p).warning"></div>
-                  </td>
-                </template>
-                <td><button @click="bulkRows.splice(i,1)" class="text-slate-300 hover:text-red-500"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
-      </div>
-
-      <div x-show="!bulkRows.length" class="text-center text-slate-400 py-10 text-sm">
-        ยังไม่มีรายการสินค้า — กด "เพิ่มสินค้า" เพื่อเริ่มต้น
-      </div>
-    </section>
-    </template>
-  </main>
-
-  <!-- Toast -->
-  <div x-show="toast" x-cloak x-transition
-       class="fixed bottom-5 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg z-50"
-       x-text="toast"></div>
-
-  <footer class="text-center text-xs text-slate-400 py-6">
-    © 2026 Multi-Platform Pricing Calculator (TH) · อัตราค่าธรรมเนียมเป็นค่าอ้างอิง โปรดตรวจสอบกับแพลตฟอร์มก่อนใช้งานจริง
+  <footer class="text-center text-secondary small py-4">
+    © 2026 Multi-Platform Pricing Calculator (TH) · อัตราค่าธรรมเนียมเป็นค่าอ้างอิง โปรดตรวจสอบกับแพลตฟอร์มก่อนใช้จริง
   </footer>
 
-  <script src="app.js"></script>
+<script>
+/* ═══════════════════════════════════════════════════════════
+   Multi-Platform Pricing Calculator — Frontend Logic (Vanilla JS)
+   ═══════════════════════════════════════════════════════════ */
+
+/* ---------- Preset ค่าธรรมเนียมตามหมวดหมู่ (ค่าอ้างอิง TH 2026) ---------- */
+const CATEGORY_PRESETS = {
+  fashion:     { shopee: { c: 4.0, pay: 2.0 }, tiktok: { c: 4.0, pay: 1.6 }, lazada: { c: 3.0, pay: 2.0 } },
+  electronics: { shopee: { c: 5.0, pay: 2.0 }, tiktok: { c: 4.5, pay: 1.6 }, lazada: { c: 4.0, pay: 2.0 } },
+  health:      { shopee: { c: 5.5, pay: 2.0 }, tiktok: { c: 5.0, pay: 1.6 }, lazada: { c: 4.5, pay: 2.0 } },
+  fmcg:        { shopee: { c: 3.0, pay: 2.0 }, tiktok: { c: 3.0, pay: 1.6 }, lazada: { c: 2.5, pay: 2.0 } }
+};
+
+/* ---------- นิยามแพลตฟอร์ม ---------- */
+const PLATFORMS = [
+  {
+    id: 'shopee', name: 'Shopee', cls: 'pc-shopee', enabled: true,
+    campaignLabel: 'Shopee ส่งฟรีพิเศษ / เหรียญแคชแบ็ก',
+    campaignOn: true, campaignPct: 5.35,
+    commissionPct: 5.5, paymentPct: 2.0, servicePct: 0, infraFee: 1.07,
+    custom: false, showFees: false, open: false
+  },
+  {
+    id: 'tiktok', name: 'TikTok Shop', cls: 'pc-tiktok', enabled: true,
+    campaignLabel: 'TikTok Seller Campaign',
+    campaignOn: false, campaignPct: 2.0,
+    commissionPct: 5.0, paymentPct: 1.6, servicePct: 0, infraFee: 0,
+    custom: false, showFees: false, open: false
+  },
+  {
+    id: 'lazada', name: 'Lazada', cls: 'pc-lazada', enabled: true,
+    campaignLabel: 'Lazada Free Shipping Max',
+    campaignOn: false, campaignPct: 2.0,
+    commissionPct: 4.5, paymentPct: 2.0, servicePct: 1.0, infraFee: 0,
+    custom: false, showFees: false, open: false
+  },
+  {
+    id: 'custom', name: 'ช่องทางของฉัน', cls: 'pc-custom', enabled: false,
+    campaignLabel: 'แคมเปญของช่องทางนี้',
+    campaignOn: false, campaignPct: 2.0,
+    commissionPct: 5.0, paymentPct: 2.0, servicePct: 0, infraFee: 0,
+    custom: true, showFees: true, open: false
+  }
+];
+
+const charts = {};
+let bulkRows = [];
+
+/* ---------- Utils ---------- */
+const fmt = n => (Math.round((+n || 0) * 100) / 100).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const num = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+const $id = id => document.getElementById(id);
+
+/* ---------- อ่านค่าจากฟอร์ม ---------- */
+function readForm() {
+  return {
+    productName: $id('productName').value.trim(),
+    productCost: num($id('productCost').value),
+    packCost: num($id('packCost').value),
+    targetProfit: num($id('targetProfit').value),
+    sellPrice: num($id('sellPrice').value),
+    adsFee: num($id('adsFee').value),
+    voucherFee: num($id('voucherFee').value),
+    calcMode: document.querySelector('input[name="calcMode"]:checked').value,
+    category: $id('categoryPreset').value
+  };
+}
+
+/* ═══════════ CORE MATH ENGINE ═══════════
+   Target:    price = (cost+pack+profit+fixed) / (1 - fee%)
+   Evaluate:  profit = price*(1-fee%) - fixed - cost - pack        */
+function calcPlatform(p, form) {
+  const totalCost = form.productCost + form.packCost;
+  const pctSum = p.commissionPct + p.paymentPct + p.servicePct +
+                 (p.campaignOn ? p.campaignPct : 0) + form.adsFee + form.voucherFee;
+  const feeDecimal = pctSum / 100;
+  const totalFeePercent = pctSum;
+
+  if (feeDecimal >= 1) {
+    return { error: true, warning: 'ค่าธรรมเนียมรวม ≥ 100% — ไม่สามารถคำนวณได้', price: 0, profit: 0, marginPercent: 0,
+             commissionFee: 0, paymentFee: 0, serviceFee: 0, campaignFee: 0, adsFeeBaht: 0, totalFeePercent, totalDeduction: 0, totalCost: 0 };
+  }
+
+  const price = form.calcMode === 'target'
+    ? (totalCost + form.targetProfit + p.infraFee) / (1 - feeDecimal)
+    : form.sellPrice;
+
+  const commissionFee = price * p.commissionPct / 100;
+  const paymentFee    = price * p.paymentPct / 100;
+  const serviceFee    = price * p.servicePct / 100;
+  const campaignFee   = p.campaignOn ? price * p.campaignPct / 100 : 0;
+  const adsFeeBaht    = price * ((form.adsFee + form.voucherFee) / 100);
+  const totalDeduction = commissionFee + paymentFee + serviceFee + campaignFee + adsFeeBaht + p.infraFee;
+  const profit = price - totalDeduction - totalCost;
+  const marginPercent = price > 0 ? (profit / price) * 100 : 0;
+
+  let warning = '';
+  if (form.calcMode === 'evaluate' && profit < 0) warning = '⚠️ ขายที่ราคานี้จะขาดทุน ฿' + fmt(Math.abs(profit)) + ' ต่อชิ้น';
+  if (!warning && price > 0 && price < totalCost) warning = '⚠️ ราคาขายต่ำกว่าต้นทุนสินค้า+บรรจุภัณฑ์';
+
+  return { error: false, warning, price, profit, marginPercent, commissionFee, paymentFee,
+           serviceFee, campaignFee, adsFeeBaht, totalDeduction, totalFeePercent, totalCost };
+}
+
+/* ---------- Render: การ์ดแพลตฟอร์ม ---------- */
+function renderPlatforms() {
+  const form = readForm();
+  const grid = $id('platformGrid');
+  grid.innerHTML = PLATFORMS.map(p => {
+    const r = calcPlatform(p, form);
+    const feeTotal = r.error ? 0 : r.totalDeduction;
+    const profitPart = r.error || r.profit < 0 ? 0 : r.profit;
+
+    const headline = form.calcMode === 'target'
+      ? `<span class="d-block small opacity-75 mb-1">ราคาขายที่แนะนำ</span>
+         <span class="price-big">฿${fmt(r.price)}</span>
+         <span class="d-block small opacity-75 mt-1">รวมกำไรเป้าหมาย ฿${fmt(form.targetProfit)}/ชิ้น</span>`
+      : `<span class="d-block small opacity-75 mb-1">กำไรสุทธิ ณ ราคานี้</span>
+         <span class="price-big ${r.profit < 0 ? 'text-warning' : ''}">฿${fmt(r.profit)}</span>
+         <span class="d-block small opacity-75 mt-1">อัตรากำไร ${fmt(r.marginPercent)}%</span>`;
+
+    const feeEditor = p.showFees ? `
+      <div class="rounded-3 p-2 mb-2" style="background:rgba(0,0,0,.25)">
+        <input type="text" class="form-control form-control-sm mb-2" id="custName-${p.id}"
+               value="${p.name.replace(/"/g, '&quot;')}" placeholder="ชื่อช่องทาง เช่น LINE SHOPPING" oninput="renamePlatform('${p.id}', this.value)">
+        <div class="row g-2">
+          <div class="col-4"><label class="form-label small mb-0 opacity-75">คอมฯ %</label>
+            <input type="number" step="0.01" class="form-control form-control-sm" value="${p.commissionPct}" oninput="setPlatformFee('${p.id}','commissionPct',this.value)"></div>
+          <div class="col-4"><label class="form-label small mb-0 opacity-75">ชำระเงิน %</label>
+            <input type="number" step="0.01" class="form-control form-control-sm" value="${p.paymentPct}" oninput="setPlatformFee('${p.id}','paymentPct',this.value)"></div>
+          <div class="col-4"><label class="form-label small mb-0 opacity-75">ค่าธรรมเนียม ฿</label>
+            <input type="number" step="0.01" class="form-control form-control-sm" value="${p.infraFee}" oninput="setPlatformFee('${p.id}','infraFee',this.value)"></div>
+        </div>
+      </div>` : '';
+
+    return `
+    <div class="col-md-6">
+      <div class="platform-card ${p.cls} ${p.enabled ? '' : 'disabled'} h-100 d-flex flex-column">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+          <div>
+            <h5 class="mb-0 fw-semibold">${p.name}</h5>
+            <div class="form-check form-switch mt-2">
+              <input class="form-check-input" type="checkbox" role="switch" id="en-${p.id}" ${p.enabled ? 'checked' : ''}
+                     onchange="togglePlatform('${p.id}', this.checked)">
+              <label class="form-check-label small opacity-75" for="en-${p.id}">เปิดเปรียบเทียบช่องทางนี้</label>
+            </div>
+          </div>
+          ${p.custom ? `<button class="btn btn-sm btn-outline-light border-0" title="ตั้งค่าช่องทาง" onclick="toggleFeePanel('${p.id}')"><i class="bi bi-gear"></i></button>` : ''}
+        </div>
+
+        ${p.enabled ? `
+        ${feeEditor}
+        <div class="result-box p-3 text-center mb-2">${headline}</div>
+
+        ${r.warning ? `<div class="small rounded-2 px-3 py-2 mb-2" style="background:rgba(220,38,38,.25)">${r.warning}</div>` : ''}
+
+        <div class="bg-white rounded-3 p-2 mb-2">
+          <canvas id="chart-${p.id}" height="170"></canvas>
+        </div>
+
+        <div class="mt-auto">
+          <button class="btn btn-sm btn-link text-white text-decoration-none p-0" onclick="toggleBreakdown('${p.id}')">
+            <i class="bi bi-receipt me-1"></i>รายละเอียดการหักค่าธรรมเนียม
+            <i class="bi bi-chevron-down ms-1" id="chev-${p.id}" style="transition:transform .2s"></i>
+          </button>
+          <div id="bd-${p.id}" class="mt-2 rounded-3 p-2 d-none" style="background:rgba(0,0,0,.22)">
+            <div class="breakdown-item"><span>ค่าคอมมิชชัน (${p.commissionPct}%)</span><span>-฿${fmt(r.commissionFee)}</span></div>
+            <div class="breakdown-item"><span>ค่าธรรมเนียมชำระเงิน (${p.paymentPct}%)</span><span>-฿${fmt(r.paymentFee)}</span></div>
+            ${p.servicePct > 0 ? `<div class="breakdown-item"><span>ค่าบริการอื่น (${p.servicePct}%)</span><span>-฿${fmt(r.serviceFee)}</span></div>` : ''}
+            ${p.campaignOn ? `<div class="breakdown-item"><span>แคมเปญ (${p.campaignPct}%)</span><span>-฿${fmt(r.campaignFee)}</span></div>` : ''}
+            <div class="breakdown-item"><span>Ads + วอลเชอร์ (${form.adsFee + form.voucherFee}%)</span><span>-฿${fmt(r.adsFeeBaht)}</span></div>
+            ${p.infraFee > 0 ? `<div class="breakdown-item"><span>ค่าธรรมเนียมโครงสร้างพื้นฐาน</span><span>-฿${fmt(p.infraFee)}</span></div>` : ''}
+            <div class="breakdown-item"><span>ต้นทุนสินค้า + บรรจุภัณฑ์</span><span>-฿${fmt(r.totalCost)}</span></div>
+            <div class="breakdown-item breakdown-total"><span>รวม % ค่าธรรมเนียม</span><span>${fmt(r.totalFeePercent)}%</span></div>
+            <div class="breakdown-item breakdown-total"><span>กำไรสุทธิ</span><span>฿${fmt(r.profit)}</span></div>
+          </div>
+        </div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  renderCharts();
+}
+
+/* ---------- Charts ---------- */
+function renderCharts() {
+  const form = readForm();
+  PLATFORMS.forEach(p => {
+    const el = $id('chart-' + p.id);
+    if (!el) return;
+    const r = calcPlatform(p, form);
+    const data = [form.productCost + form.packCost,
+                  r.error ? 0 : r.totalDeduction,
+                  r.error || r.profit < 0 ? 0 : r.profit];
+    if (charts[p.id]) { charts[p.id].data.datasets[0].data = data; charts[p.id].update(); }
+    else charts[p.id] = new Chart(el, {
+      type: 'doughnut',
+      data: {
+        labels: ['ต้นทุนสินค้า', 'ค่าธรรมเนียมแพลตฟอร์ม', 'กำไรสุทธิ'],
+        datasets: [{ data, backgroundColor: ['#f59e0b', '#94a3b8', '#10b981'], borderWidth: 2, borderColor: '#fff' }]
+      },
+      options: {
+        responsive: true, cutout: '60%',
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { family: 'Kanit', size: 11 }, boxWidth: 12, padding: 8 } },
+          tooltip: { callbacks: { label: ctx => ctx.label + ': ฿' + fmt(ctx.parsed) } }
+        }
+      }
+    });
+  });
+}
+
+/* ---------- แคมเปญ toggles ---------- */
+function renderCampaigns() {
+  $id('campaignList').innerHTML = PLATFORMS.map(p => `
+    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+      <div>
+        <div class="small">${p.campaignLabel}</div>
+        <div class="text-secondary" style="font-size:.78rem">ค่าบริการเพิ่ม ${p.campaignPct}% ของราคาขาย</div>
+      </div>
+      <div class="form-check form-switch ms-2">
+        <input class="form-check-input" type="checkbox" role="switch" id="camp-${p.id}" ${p.campaignOn ? 'checked' : ''}
+               onchange="toggleCampaign('${p.id}', this.checked)">
+      </div>
+    </div>`).join('');
+}
+
+/* ---------- Interactions ---------- */
+function togglePlatform(id, on) {
+  const p = PLATFORMS.find(x => x.id === id);
+  p.enabled = on; renderPlatforms();
+}
+function toggleCampaign(id, on) {
+  PLATFORMS.find(x => x.id === id).campaignOn = on; renderPlatforms();
+}
+function setPlatformFee(id, key, val) {
+  PLATFORMS.find(x => x.id === id)[key] = num(val); renderPlatforms();
+}
+function renamePlatform(id, val) { PLATFORMS.find(x => x.id === id).name = val || 'ช่องทางของฉัน'; }
+function toggleFeePanel(id) {
+  const p = PLATFORMS.find(x => x.id === id);
+  p.showFees = !p.showFees; renderPlatforms();
+}
+function toggleBreakdown(id) {
+  const bd = $id('bd-' + id), chev = $id('chev-' + id);
+  bd.classList.toggle('d-none');
+  chev.style.transform = bd.classList.contains('d-none') ? '' : 'rotate(180deg)';
+}
+function applyPreset() {
+  const cat = $id('categoryPreset').value;
+  const preset = CATEGORY_PRESETS[cat];
+  if (!preset) return; // 'custom' = กำหนดเอง
+  PLATFORMS.forEach(p => {
+    const v = preset[p.id];
+    if (v && !p.custom) { p.commissionPct = v.c; p.paymentPct = v.pay; }
+  });
+  renderPlatforms();
+}
+
+/* ---------- โหมดคำนวณ (target/evaluate) ---------- */
+document.querySelectorAll('input[name="calcMode"]').forEach(r => {
+  r.addEventListener('change', () => {
+    const target = $id('modeTarget').checked;
+    $id('targetProfitBox').classList.toggle('d-none', !target);
+    $id('sellPriceBox').classList.toggle('d-none', target);
+    renderPlatforms();
+  });
+});
+
+/* ---------- Global warning ---------- */
+function updateGlobalWarning() {
+  const form = readForm();
+  const pctSum = PLATFORMS.filter(p => p.enabled).map(p =>
+    p.commissionPct + p.paymentPct + p.servicePct + (p.campaignOn ? p.campaignPct : 0) + form.adsFee + form.voucherFee);
+  const box = $id('globalWarning');
+  if (pctSum.some(v => v >= 100)) {
+    $id('globalWarningText').textContent = 'ค่าธรรมเนียมรวมของบางแพลตฟอร์ม ≥ 100% ของราคาขาย — ไม่สามารถคำนวณราคาได้ กรุณาลดอัตราค่าธรรมเนียม';
+    box.classList.remove('d-none');
+  } else {
+    box.classList.add('d-none');
+  }
+}
+
+/* ═══════════ บันทึกลง Google Sheet ═══════════ */
+function saveToSheet() {
+  const form = readForm();
+  if (!form.productName) {
+    Swal.fire({ icon: 'warning', title: 'กรุณากรอกชื่อสินค้า', text: 'ระบุชื่อสินค้าหรือ SKU เพื่อใช้อ้างอิงในการบันทึกข้อมูล', confirmButtonColor: '#EE4D2D' });
+    return;
+  }
+  const active = PLATFORMS.filter(p => p.enabled);
+  if (!active.length) {
+    Swal.fire({ icon: 'warning', title: 'ยังไม่ได้เลือกแพลตฟอร์ม', confirmButtonColor: '#EE4D2D' });
+    return;
+  }
+
+  const items = active.map(p => {
+    const r = calcPlatform(p, form);
+    return {
+      platform: p.name,
+      commFee: p.commissionPct, payFee: p.paymentPct,
+      serviceFee: p.servicePct + (p.campaignOn ? p.campaignPct : 0),
+      infraFee: p.infraFee,
+      totalFeePercent: r.totalFeePercent,
+      recommendedPrice: r.price.toFixed(2),
+      finalNetProfit: r.profit.toFixed(2),
+      marginPercent: r.marginPercent.toFixed(2),
+      calcMode: form.calcMode
+    };
+  });
+
+  const payload = {
+    productName: form.productName, productCost: form.productCost, packCost: form.packCost,
+    targetProfit: form.calcMode === 'target' ? form.targetProfit : form.sellPrice,
+    adsFee: form.adsFee + form.voucherFee, items
+  };
+
+  Swal.fire({ title: 'กำลังบันทึกข้อมูล...', text: 'ระบบกำลังส่งข้อมูลไปยัง Google Sheet', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+  if (typeof google !== 'undefined' && google.script && google.script.run) {
+    google.script.run
+      .withSuccessHandler(res => {
+        if (res.status === 'success') {
+          Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: res.message, confirmButtonColor: '#EE4D2D' });
+          loadHistory();
+        } else {
+          Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: res.message, confirmButtonColor: '#EE4D2D' });
+        }
+      })
+      .withFailureHandler(err => Swal.fire({ icon: 'error', title: 'เชื่อมต่อไม่สำเร็จ', text: err.toString(), confirmButtonColor: '#EE4D2D' }))
+      .saveDataToSheet(payload);
+  } else {
+    setTimeout(() => Swal.fire({ icon: 'info', title: 'โหมดทดสอบในเบราว์เซอร์', text: 'คำนวณสำเร็จ (บันทึก Google Sheet จะทำงานเมื่อ Deploy บน Google Apps Script)', confirmButtonColor: '#EE4D2D' }), 500);
+  }
+}
+
+/* ---------- ประวัติจาก Sheet ---------- */
+function loadHistory() {
+  if (typeof google === 'undefined' || !google.script || !google.script.run) return;
+  google.script.run
+    .withSuccessHandler(res => {
+      if (!res.data || !res.data.length) return;
+      $id('historyCard').classList.remove('d-none');
+      $id('historyBody').innerHTML = res.data.map(h => `
+        <tr>
+          <td class="text-secondary small">${h.date}</td>
+          <td>${h.sku}</td>
+          <td>${h.platform}</td>
+          <td class="fw-semibold">฿${fmt(h.price)}</td>
+          <td class="${h.profit < 0 ? 'text-danger' : 'text-success'} fw-semibold">฿${fmt(h.profit)}</td>
+        </tr>`).join('');
+    })
+    .getHistory(15);
+}
+
+/* ═══════════ CSV Export ═══════════ */
+function downloadCSV(head, rows, filename) {
+  const esc = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+  const csv = '\uFEFF' + [head, ...rows].map(r => r.map(esc).join(',')).join('\r\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+  URL.revokeObjectURL(a.href);
+  Swal.fire({ icon: 'success', title: 'ดาวน์โหลดสำเร็จ', text: filename, timer: 1600, showConfirmButton: false });
+}
+
+function exportSingleCSV() {
+  const form = readForm();
+  const head = ['ชื่อสินค้า', 'แพลตฟอร์ม', 'โหมด', 'ต้นทุน', 'บรรจุภัณฑ์', 'ราคาขาย', 'กำไรสุทธิ', 'กำไร(%)', 'ค่าธรรมเนียมรวม(%)', 'รวมยอดหัก(฿)'];
+  const rows = PLATFORMS.filter(p => p.enabled).map(p => {
+    const r = calcPlatform(p, form);
+    return [form.productName, p.name, form.calcMode === 'target' ? 'หาราคาขาย' : 'ดูกำไร',
+            form.productCost, form.packCost, r.error ? '-' : r.price.toFixed(2), r.error ? '-' : r.profit.toFixed(2),
+            r.error ? '-' : r.marginPercent.toFixed(2), r.totalFeePercent.toFixed(2), r.totalDeduction.toFixed(2)];
+  });
+  downloadCSV(head, rows, 'pricing_multiplatform.csv');
+}
+
+/* ═══════════ BULK MODE ═══════════ */
+function renderBulk() {
+  const active = PLATFORMS.filter(p => p.enabled);
+  $id('bulkEmpty').classList.toggle('d-none', bulkRows.length > 0);
+  $id('bulkHead').innerHTML =
+    '<th>SKU</th><th>ต้นทุน (฿)</th><th>บรรจุภัณฑ์ (฿)</th><th>กำไรเป้าหมาย (฿)</th>' +
+    active.map(p => `<th class="text-center">${p.name}<div class="text-secondary fw-normal" style="font-size:.72rem">ราคาขาย / กำไร%</div></th>`).join('') +
+    '<th></th>';
+
+  $id('bulkBody').innerHTML = bulkRows.map((row, i) => {
+    const cells = active.map(p => {
+      const r = calcPlatform(p, { ...readForm(), productCost: row.cost, packCost: row.packaging, targetProfit: row.targetProfit, calcMode: 'target' });
+      if (r.error) return `<td class="text-center bulk-warn">-</td>`;
+      return `<td class="text-center"><span class="bulk-price ${r.warning ? 'bulk-warn' : ''}">${fmt(r.price)}</span>
+              <div class="text-secondary" style="font-size:.72rem">${r.warning ? 'ขาดทุน' : fmt(r.marginPercent) + '%'}</div></td>`;
+    }).join('');
+    return `<tr>
+      <td><input type="text" class="form-control form-control-sm" style="min-width:140px" value="${(row.sku || '').replace(/"/g, '&quot;')}" oninput="bulkRows[${i}].sku=this.value"></td>
+      <td><input type="number" step="0.01" class="form-control form-control-sm" style="width:100px" value="${row.cost}" onchange="bulkRows[${i}].cost=num(this.value);renderBulk()"></td>
+      <td><input type="number" step="0.01" class="form-control form-control-sm" style="width:100px" value="${row.packaging}" onchange="bulkRows[${i}].packaging=num(this.value);renderBulk()"></td>
+      <td><input type="number" step="0.01" class="form-control form-control-sm" style="width:110px" value="${row.targetProfit}" onchange="bulkRows[${i}].targetProfit=num(this.value);renderBulk()"></td>
+      ${cells}
+      <td><button class="btn btn-sm btn-outline-danger border-0" onclick="bulkRows.splice(${i},1);renderBulk()"><i class="bi bi-trash"></i></button></td>
+    </tr>`;
+  }).join('');
+}
+
+function exportBulkCSV() {
+  const active = PLATFORMS.filter(p => p.enabled);
+  const form = readForm();
+  const head = ['SKU', 'ต้นทุน', 'บรรจุภัณฑ์', 'กำไรเป้าหมาย',
+    ...active.map(p => p.name + ' ราคาขาย'), ...active.map(p => p.name + ' กำไร(%)')];
+  const rows = bulkRows.map(row => {
+    const rs = active.map(p => calcPlatform(p, { ...form, productCost: row.cost, packCost: row.packaging, targetProfit: row.targetProfit, calcMode: 'target' }));
+    return [row.sku, row.cost, row.packaging, row.targetProfit,
+      ...rs.map(r => r.error ? '-' : r.price.toFixed(2)),
+      ...rs.map(r => r.error ? '-' : r.marginPercent.toFixed(2))];
+  });
+  downloadCSV(head, rows, 'pricing_bulk.csv');
+}
+
+/* ═══════════ Share ═══════════ */
+async function shareCalc() {
+  const form = readForm();
+  const text = '📊 การคำนวณราคาขาย' + (form.productName ? ' — ' + form.productName : '') + '\n' +
+    PLATFORMS.filter(p => p.enabled).map(p => {
+      const r = calcPlatform(p, form);
+      return p.name + ': ราคา ฿' + fmt(r.price) + ' กำไร ฿' + fmt(r.profit);
+    }).join('\n');
+  if (navigator.share) {
+    try { await navigator.share({ title: 'การคำนวณราคาขาย', text }); } catch (e) { /* ผู้ใช้ยกเลิก */ }
+  } else if (navigator.clipboard) {
+    await navigator.clipboard.writeText(text);
+    Swal.fire({ icon: 'success', title: 'คัดลอกแล้ว', text: 'ข้อความแชร์ถูกคัดลอกไปยังคลิปบอร์ด', timer: 1600, showConfirmButton: false });
+  }
+}
+
+/* ═══════════ INIT ═══════════ */
+function init() {
+  // ทุก input ในหน้า single mode → คำนวณใหม่แบบ realtime
+  document.querySelectorAll('#singleMode input, #singleMode select').forEach(el => {
+    el.addEventListener('input', () => { renderPlatforms(); updateGlobalWarning(); });
+  });
+
+  $id('categoryPreset').addEventListener('change', applyPreset);
+  $id('btnSave').addEventListener('click', saveToSheet);
+  $id('btnExportCSV').addEventListener('click', exportSingleCSV);
+  $id('btnShare').addEventListener('click', shareCalc);
+  $id('btnAddBulkRow').addEventListener('click', () => { bulkRows.push({ sku: '', cost: 0, packaging: 0, targetProfit: 0 }); renderBulk(); });
+  $id('btnExportBulkCSV').addEventListener('click', exportBulkCSV);
+
+  // Mode toggle
+  $id('btnModeSingle').addEventListener('click', () => {
+    $id('singleMode').classList.remove('d-none'); $id('bulkMode').classList.add('d-none');
+    $id('btnModeSingle').classList.add('active', 'btn-light'); $id('btnModeSingle').classList.remove('btn-outline-light');
+    $id('btnModeBulk').classList.remove('active', 'btn-light'); $id('btnModeBulk').classList.add('btn-outline-light');
+    renderPlatforms();
+  });
+  $id('btnModeBulk').addEventListener('click', () => {
+    $id('singleMode').classList.add('d-none'); $id('bulkMode').classList.remove('d-none');
+    $id('btnModeBulk').classList.add('active', 'btn-light'); $id('btnModeBulk').classList.remove('btn-outline-light');
+    $id('btnModeSingle').classList.remove('active', 'btn-light'); $id('btnModeSingle').classList.add('btn-outline-light');
+    renderBulk();
+  });
+
+  applyPreset();
+  renderCampaigns();
+  renderPlatforms();
+  loadHistory();
+}
+document.addEventListener('DOMContentLoaded', init);
+
+/* ---------- PWA Install Prompt ---------- */
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  $id('btnInstallApp').classList.remove('d-none');
+});
+$idSafe('btnInstallApp')?.addEventListener('click', async () => {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') $id('btnInstallApp').classList.add('d-none');
+    deferredPrompt = null;
+  }
+});
+function $idSafe(id) { return document.getElementById(id); }
+</script>
 </body>
 </html>
