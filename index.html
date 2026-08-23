@@ -398,7 +398,33 @@
           </div>
         </div>
         <div class="card-body">
-          <p class="text-secondary small">ใช้โหมด "ตั้งกำไร → หาราคาขาย" พร้อมค่าธรรมเนียมตามหมวดหมู่และแคมเปญที่ตั้งไว้ในหน้าหลัก</p>
+          <!-- ตั้งค่าค่าธรรมเนียมของหน้า Bulk (แยกอิสระจากหน้าหลัก) -->
+          <div class="row g-3 mb-2">
+            <div class="col-md-4">
+              <label class="form-label fw-bold"><i class="bi bi-layers me-1"></i>หมวดหมู่สินค้า (Preset)</label>
+              <select class="form-select" id="bulkCategory">
+                <option value="fashion">แฟชั่น (Fashion)</option>
+                <option value="electronics" selected>มือถือและอุปกรณ์เสริม (Electronics)</option>
+                <option value="health">สุขภาพและความงาม (Health & Beauty)</option>
+                <option value="fmcg">สินค้าอุปโภคบริโภค (FMCG)</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold"><i class="bi bi-shop me-1"></i>ประเภทร้านค้า</label>
+              <select class="form-select" id="bulkSellerType">
+                <option value="nonmall" selected>ร้านค้าทั่วไป (Non-Mall)</option>
+                <option value="nonmall_small">ร้านค้าทั่วไป — ผู้ขายรายเล็ก</option>
+                <option value="mall">Mall (Shopee Mall / TikTok Mall / LazMall)</option>
+                <option value="mall_small">Mall — ผู้ขายรายเล็ก</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold"><i class="bi bi-credit-card me-1"></i>วิธีชำระเงิน (Shopee)</label>
+              <select class="form-select" id="bulkPayMethod"></select>
+            </div>
+          </div>
+          <div id="bulkCampaigns" class="mb-3"></div>
+          <p class="text-secondary small">ใช้โหมด "ตั้งกำไร → หาราคาขาย" กับค่าธรรมเนียมตามที่ตั้งไว้ด้านบน (เฉพาะหน้านี้ ไม่กระทบหน้าหลัก)</p>
           <div class="table-responsive" style="max-height: 60vh;">
             <table class="table table-hover align-middle sticky-head">
               <thead><tr id="bulkHead"></tr></thead>
@@ -881,21 +907,17 @@ function toggleBreakdown(id) {
   bd.classList.toggle('d-none');
   chev.style.transform = bd.classList.contains('d-none') ? '' : 'rotate(180deg)';
 }
-function applyPreset() {
-  const cat = $id('categoryPreset').value;
-  const sellerType = $id('sellerType').value;           // nonmall | nonmall_small | mall | mall_small
+/* Apply preset ค่าธรรมเนียมให้ list แพลตฟอร์มใด ๆ (ใช้ร่วมทั้งหน้าหลักและหน้า Bulk) */
+function applyPresetTo(list, cat, sellerType, payId) {
   const isSmall = sellerType.endsWith('_small');
   const isMall = sellerType.startsWith('mall');
+  const shopee = list.find(p => p.id === 'shopee');
+  const tiktok = list.find(p => p.id === 'tiktok');
+  const lazada = list.find(p => p.id === 'lazada');
 
-  const shopee = PLATFORMS.find(p => p.id === 'shopee');
-  const tiktok = PLATFORMS.find(p => p.id === 'tiktok');
-  const lazada = PLATFORMS.find(p => p.id === 'lazada');
-
-  /* Shopee: คอมมิชชันตาม หมวด × ประเภทร้าน (นโยบาย 4 ส.ค. 2026) */
   const shopeePreset = SHOPEE_COMM_PRESETS[cat];
   if (shopeePreset) shopee.commissionPct = shopeePreset[sellerType];
 
-  /* TikTok: คอมมิชชันแยก Mall/Non-Mall + Commerce Growth Fee แยกรายเล็ก */
   const ttPreset = TIKTOK_COMM_PRESETS[cat];
   if (ttPreset) {
     tiktok.commissionPct = isMall ? ttPreset.mall : ttPreset.nonmall;
@@ -903,16 +925,16 @@ function applyPreset() {
     tiktok.growthPct = isSmall ? growth.small : growth.normal;
   }
 
-  /* Lazada: คอมมิชชันแยก LazMall / ร้านทั่วไป */
   const lzPreset = LAZADA_COMM_PRESETS[cat];
   if (lzPreset) lazada.commissionPct = isMall ? lzPreset.mall : lzPreset.nonmall;
 
-  /* ค่าธรรมเนียมชำระเงิน: TikTok / Lazada = 3.21% | Shopee ตามวิธีชำระที่เลือก */
   tiktok.paymentPct = 3.21;
   lazada.paymentPct = 3.21;
-  const payMethod = SHOPEE_PAY_METHODS.find(m => m.id === $id('shopeePayMethod').value) || SHOPEE_PAY_METHODS[0];
+  const payMethod = SHOPEE_PAY_METHODS.find(m => m.id === payId) || SHOPEE_PAY_METHODS[0];
   shopee.paymentPct = payMethod.pct;
-
+}
+function applyPreset() {
+  applyPresetTo(PLATFORMS, $id('categoryPreset').value, $id('sellerType').value, $id('shopeePayMethod').value);
   renderPlatforms();
 }
 function applyShopeePayMethod() {
@@ -1042,8 +1064,51 @@ function exportSingleCSV() {
 }
 
 /* ═══════════ BULK MODE ═══════════ */
+/* ค่าธรรมเนียมของหน้า Bulk — แยกอิสระจากหน้าหลัก */
+const bulkState = {
+  category: 'electronics', sellerType: 'nonmall', pay: 'normal',
+  campaigns: { shopee: true, lazada: false, custom: false },
+  campaignPcts: { shopee: 5.35, lazada: 5.35, custom: 2.0 }
+};
+
+/* สร้างสำเนาแพลตฟอร์มพร้อม preset/แคมเปญตามการตั้งค่าของหน้า Bulk */
+function getBulkPlatforms() {
+  const copy = PLATFORMS.map(p => Object.assign({}, p));
+  applyPresetTo(copy, bulkState.category, bulkState.sellerType, bulkState.pay);
+  copy.forEach(p => {
+    if (bulkState.campaigns[p.id] !== undefined) {
+      p.campaignOn = bulkState.campaigns[p.id];
+      p.campaignPct = bulkState.campaignPcts[p.id];
+    }
+  });
+  return copy;
+}
+
+/* รายการแคมเปญของหน้า Bulk (เฉพาะแพลตฟอร์มที่เปิดใช้งาน) */
+function renderBulkCampaigns() {
+  $id('bulkCampaigns').innerHTML = getBulkPlatforms().filter(p => p.enabled && p.hasCampaign !== false).map(p => {
+    const pctCtrl = `
+      <select class="form-select form-select-sm mt-1" style="max-width:150px" onchange="setBulkCampaignPct('${p.id}', this.value)">
+        ${[3.21, 4.28, 5.35].map(v => `<option value="${v}" ${bulkState.campaignPcts[p.id] === v ? 'selected' : ''}>${v}%</option>`).join('')}
+      </select>`;
+    return `
+    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+      <div>
+        <div class="small">${p.campaignLabel}</div>
+        ${pctCtrl}
+      </div>
+      <div class="form-check form-switch ms-2">
+        <input class="form-check-input" type="checkbox" role="switch" id="bcamp-${p.id}" ${bulkState.campaigns[p.id] ? 'checked' : ''}
+               onchange="toggleBulkCampaign('${p.id}', this.checked)">
+      </div>
+    </div>`;
+  }).join('');
+}
+function toggleBulkCampaign(id, on) { bulkState.campaigns[id] = on; renderBulk(); }
+function setBulkCampaignPct(id, val) { bulkState.campaignPcts[id] = num(val); renderBulk(); }
+
 function renderBulk() {
-  const active = PLATFORMS.filter(p => p.enabled);
+  const active = getBulkPlatforms().filter(p => p.enabled);
   $id('bulkEmpty').classList.toggle('d-none', bulkRows.length > 0);
   $id('bulkHead').innerHTML =
     '<th>SKU</th><th>ต้นทุน (฿)</th><th>บรรจุภัณฑ์ (฿)</th><th>กำไรเป้าหมาย (฿)</th>' +
@@ -1066,10 +1131,12 @@ function renderBulk() {
       <td><button class="btn btn-sm btn-outline-danger border-0" onclick="bulkRows.splice(${i},1);renderBulk()"><i class="bi bi-trash"></i></button></td>
     </tr>`;
   }).join('');
+
+  renderBulkCampaigns();
 }
 
 function exportBulkCSV() {
-  const active = PLATFORMS.filter(p => p.enabled);
+  const active = getBulkPlatforms().filter(p => p.enabled);
   const form = readForm();
   const head = ['SKU', 'ต้นทุน', 'บรรจุภัณฑ์', 'กำไรเป้าหมาย',
     ...active.map(p => p.name + ' ราคาขาย'), ...active.map(p => p.name + ' กำไร(%)')];
@@ -1232,6 +1299,13 @@ function init() {
   $id('btnShare').addEventListener('click', shareCalc);
   $id('btnAddBulkRow').addEventListener('click', () => { bulkRows.push({ sku: '', cost: 0, packaging: 0, targetProfit: 0 }); renderBulk(); });
   $id('btnExportBulkCSV').addEventListener('click', exportBulkCSV);
+
+  // ตั้งค่าค่าธรรมเนียมของหน้า Bulk (แยกอิสระจากหน้าหลัก)
+  $id('bulkPayMethod').innerHTML = SHOPEE_PAY_METHODS
+    .map(m => `<option value="${m.id}" ${m.id === 'normal' ? 'selected' : ''}>${m.label} — ${m.pct}%</option>`).join('');
+  $id('bulkCategory').addEventListener('change', e => { bulkState.category = e.target.value; renderBulk(); });
+  $id('bulkSellerType').addEventListener('change', e => { bulkState.sellerType = e.target.value; renderBulk(); });
+  $id('bulkPayMethod').addEventListener('change', e => { bulkState.pay = e.target.value; renderBulk(); });
 
   // Mode toggle
   $id('btnModeSingle').addEventListener('click', () => {
