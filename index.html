@@ -353,7 +353,7 @@
           <div class="card shadow-sm border-0 rounded-3 mt-3">
             <div class="card-body p-3 d-flex flex-wrap gap-2">
               <button type="button" class="btn btn-shopee flex-grow-1" id="btnSave">
-                <i class="bi bi-clock-history me-1"></i>บันทึกประวัติ (บันทึกบนเครื่องคุณ)
+                <i class="bi bi-clock-history me-1"></i>บันทึกประวัติ
               </button>
               <button type="button" class="btn btn-success flex-grow-1" id="btnExportCSV">
                 <i class="bi bi-file-earmark-excel me-1"></i>ส่งออก CSV
@@ -367,7 +367,7 @@
           <!-- HISTORY (LocalStorage — เห็นเฉพาะของเครื่องตัวเอง) -->
           <div class="card shadow-sm border-0 rounded-3 mt-3 d-none" id="historyCard">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
-              <h5 class="mb-0 fw-semibold"><i class="bi bi-clock-history me-2"></i>ประวัติการบันทึกล่าสุด (บันทึกบนเครื่องนี้)</h5>
+              <h5 class="mb-0 fw-semibold"><i class="bi bi-clock-history me-2"></i>ประวัติการบันทึกล่าสุด</h5>
               <button type="button" class="btn btn-sm btn-outline-danger border-0" id="btnClearHistory" title="ล้างประวัติทั้งหมด">
                 <i class="bi bi-trash me-1"></i>ล้างประวัติ
               </button>
@@ -1099,24 +1099,137 @@ function exportBulkCSV() {
   downloadCSV(head, rows, 'pricing_bulk.csv');
 }
 
-/* ═══════════ Share ═══════════ */
+/* ═══════════ Share: รูปภาพสรุป + ลิงก์ย้อนกลับ ═══════════ */
+
+/* สร้าง URL ที่ฝังค่าการคำนวณปัจจุบัน — ผู้รบเปิดลิงก์แล้วฟอร์มกรอกค่าเดิมให้อัตโนมัติ */
+function buildShareUrl() {
+  const f = readForm();
+  const q = new URLSearchParams({
+    sh: 1, m: f.calcMode, n: f.productName, c: f.productCost, p: f.packCost,
+    t: f.targetProfit, s: f.sellPrice, a: f.adsFee, v: f.voucherFee,
+    cat: f.category, st: $id('sellerType').value, pay: $id('shopeePayMethod').value,
+    ps: PLATFORMS.filter(x => x.enabled).map(x => x.id).join(',')
+  });
+  return location.origin + location.pathname + '?' + q.toString();
+}
+
+/* ถ้าเปิดมาจากลิงก์แชร์ → กรอกฟอร์มด้วยค่าที่ฝังไว้ */
+function applyShareUrl() {
+  const q = new URLSearchParams(location.search);
+  if (q.get('sh') !== '1') return;
+  const set = (id, val) => { if (val !== null) $id(id).value = val; };
+  set('productName', q.get('n'));
+  set('productCost', q.get('c'));
+  set('packCost', q.get('p'));
+  set('targetProfit', q.get('t'));
+  set('sellPrice', q.get('s'));
+  set('adsFee', q.get('a'));
+  set('voucherFee', q.get('v'));
+  set('categoryPreset', q.get('cat') || 'fashion');
+  set('sellerType', q.get('st') || 'nonmall');
+  if (q.get('pay')) $id('shopeePayMethod').value = q.get('pay');
+  const mode = q.get('m') === 'evaluate' ? 'modeEvaluate' : 'modeTarget';
+  $id(mode).checked = true;
+  $id(mode).dispatchEvent(new Event('change'));
+  const plats = (q.get('ps') || '').split(',').filter(Boolean);
+  if (plats.length) PLATFORMS.forEach(p => p.enabled = plats.includes(p.id));
+}
+
+/* วาดรูปสรุปการคำนวณด้วย Canvas (โทนเดียวกับเว็บ) */
+function renderShareImage(url) {
+  const f = readForm();
+  const active = PLATFORMS.filter(p => p.enabled)
+    .map(p => ({ p, r: calcPlatform(p, f) }))
+    .filter(x => !x.r.error);
+
+  const W = 1000, pad = 48, headerH = 170, rowH = 96, footerH = 96;
+  const H = headerH + Math.max(active.length, 1) * rowH + footerH;
+  const cv = document.createElement('canvas');
+  cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+
+  /* พื้นหลัง + แถบสีแบรนด์ */
+  g.fillStyle = '#1c1814'; g.fillRect(0, 0, W, H);
+  g.fillStyle = '#EE4D2D'; g.fillRect(0, 0, W, 10);
+
+  /* หัวการ์ด */
+  g.fillStyle = '#EE4D2D'; g.font = '600 30px Kanit, sans-serif';
+  g.fillText('เครื่องมือคำนวณราคาขาย Multi-Platform', pad, 72);
+  g.fillStyle = '#fdfbf8'; g.font = '700 44px Kanit, sans-serif';
+  const name = f.productName || 'ไม่ระบุชื่อสินค้า';
+  g.fillText(name.length > 30 ? name.slice(0, 29) + '…' : name, pad, 128);
+
+  /* หัวตาราง */
+  const colName = pad, colPrice = 560, colProfit = 800;
+  let y = headerH;
+  g.fillStyle = '#cdc7bf'; g.font = '500 26px Kanit, sans-serif';
+  g.fillText('แพลตฟอร์ม', colName, y);
+  g.fillText('ราคาขาย', colPrice, y);
+  g.fillText(f.calcMode === 'target' ? 'กำไร/ชิ้น' : 'กำไร ณ ราคานี้', colProfit, y);
+  y += 14;
+  g.strokeStyle = 'rgba(255,255,255,.15)'; g.lineWidth = 2;
+  g.beginPath(); g.moveTo(pad, y); g.lineTo(W - pad, y); g.stroke();
+  y += 34;
+
+  /* แถวแต่ละแพลตฟอร์ม */
+  active.forEach(({ p, r }) => {
+    g.fillStyle = '#fdfbf8'; g.font = '500 34px Kanit, sans-serif';
+    g.fillText(p.name, colName, y);
+    g.fillStyle = '#ff8a66'; g.font = '700 40px Kanit, sans-serif';
+    g.fillText('฿' + fmt(r.price), colPrice, y);
+    g.fillStyle = r.profit >= 0 ? '#34d399' : '#f87171'; g.font = '600 34px Kanit, sans-serif';
+    g.fillText('฿' + fmt(r.profit), colProfit, y);
+    y += rowH - 22;
+  });
+
+  /* ท้ายการ์ด: ลิงก์ย้อนกลับ */
+  g.fillStyle = '#cdc7bf'; g.font = '400 24px Kanit, sans-serif';
+  g.fillText('คำนวณต่อ/แก้ไขค่าได้ที่ลิงก์นี้ — ใช้ฟรี ไม่มีเงื่อนไข', pad, H - 52);
+  g.fillStyle = '#fbbf24';
+  g.fillText(url.length > 78 ? url.slice(0, 77) + '…' : url, pad, H - 18);
+
+  return new Promise(res => cv.toBlob(res, 'image/png'));
+}
+
 async function shareCalc() {
-  const form = readForm();
-  const text = 'สรุปการคำนวณราคาขาย' + (form.productName ? ' — ' + form.productName : '') + '\n' +
-    PLATFORMS.filter(p => p.enabled).map(p => {
-      const r = calcPlatform(p, form);
-      return p.name + ': ราคา ฿' + fmt(r.price) + ' กำไร ฿' + fmt(r.profit);
-    }).join('\n');
-  if (navigator.share) {
-    try { await navigator.share({ title: 'การคำนวณราคาขาย', text }); } catch (e) { /* ผู้ใช้ยกเลิก */ }
-  } else if (navigator.clipboard) {
+  const f = readForm();
+  const url = buildShareUrl();
+  const active = PLATFORMS.filter(p => p.enabled);
+  if (!active.length) {
+    Swal.fire({ icon: 'warning', title: 'ยังไม่ได้เลือกแพลตฟอร์ม', confirmButtonColor: '#EE4D2D' });
+    return;
+  }
+
+  const text = 'สรุปการคำนวณราคาขาย' + (f.productName ? ' — ' + f.productName : '') + '\n' +
+    active.map(p => { const r = calcPlatform(p, f); return p.name + ': ราคา ฿' + fmt(r.price) + ' กำไร ฿' + fmt(r.profit); }).join('\n') +
+    '\nคำนวณต่อได้ที่: ' + url;
+
+  const blob = await renderShareImage(url);
+
+  /* มือถือ/เบราว์เซอร์ที่แชร์ไฟล์ได้ → แชร์รูป + ข้อความพร้อมลิงก์ */
+  const file = new File([blob], 'pricing-summary.png', { type: 'image/png' });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ title: 'การคำนวณราคาขาย', text, files: [file] }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; /* ผู้ใช้ยกเลิก */ }
+  }
+
+  /*  fallback: ดาวน์โหลดรูป + คัดลอกข้อความพร้อมลิงก์ */
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'pricing-summary.png'; a.click();
+  URL.revokeObjectURL(a.href);
+  if (navigator.clipboard) {
     await navigator.clipboard.writeText(text);
-    Swal.fire({ icon: 'success', title: 'คัดลอกแล้ว', text: 'ข้อความแชร์ถูกคัดลอกไปยังคลิปบอร์ด', timer: 1600, showConfirmButton: false });
+    Swal.fire({ icon: 'success', title: 'ดาวน์โหลดรูป และคัดลอกลิงก์แล้ว',
+      text: 'ส่งรูปเข้ากลุ่มแชทได้เลย และวางลิงก์เพื่อให้คนอื่นเปิดมาแก้ค่าต่อได้', confirmButtonColor: '#EE4D2D' });
+  } else {
+    Swal.fire({ icon: 'success', title: 'ดาวน์โหลดรูปแล้ว', text: url, confirmButtonColor: '#EE4D2D' });
   }
 }
 
 /* ═══════════ INIT ═══════════ */
 function init() {
+  applyShareUrl();   // เปิดจากลิงก์แชร์ → กรอกฟอร์มค่าเดิมให้อัตโนมัติ
+
   // ทุก input ในหน้า single mode → คำนวณใหม่แบบ realtime
   document.querySelectorAll('#singleMode input, #singleMode select').forEach(el => {
     el.addEventListener('input', () => { renderPlatforms(); updateGlobalWarning(); });
