@@ -1092,14 +1092,14 @@ function renderBulkCampaigns() {
         ${[3.21, 4.28, 5.35].map(v => `<option value="${v}" ${bulkState.campaignPcts[p.id] === v ? 'selected' : ''}>${v}%</option>`).join('')}
       </select>`;
     return `
-    <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-      <div>
-        <div class="small">${p.campaignLabel}</div>
-        ${pctCtrl}
-      </div>
-      <div class="form-check form-switch ms-2">
-        <input class="form-check-input" type="checkbox" role="switch" id="bcamp-${p.id}" ${bulkState.campaigns[p.id] ? 'checked' : ''}
+    <div class="d-flex align-items-center py-2 border-bottom gap-2">
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" id="bcamp-${p.id}" ${bulkState.campaigns[p.id] ? 'checked' : ''}
                onchange="toggleBulkCampaign('${p.id}', this.checked)">
+      </div>
+      <div class="flex-grow-1">
+        <div class="small" style="color:#c9c3bb">${p.campaignLabel}</div>
+        ${pctCtrl}
       </div>
     </div>`;
   }).join('');
