@@ -395,10 +395,6 @@
       <div class="card shadow-sm border-0 rounded-3">
         <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
           <h5 class="mb-0 fw-semibold"><i class="bi bi-table me-2"></i>คำนวณหลายสินค้า (SKU Management)</h5>
-          <div class="d-flex gap-2">
-            <button type="button" class="btn btn-primary btn-sm" id="btnAddBulkRow"><i class="bi bi-plus-lg me-1"></i>เพิ่มสินค้า</button>
-            <button type="button" class="btn btn-success btn-sm" id="btnExportBulkCSV"><i class="bi bi-file-earmark-excel me-1"></i>ส่งออก CSV</button>
-          </div>
         </div>
         <div class="card-body">
           <!-- ตั้งค่าค่าธรรมเนียมของหน้า Bulk (แยกอิสระจากหน้าหลัก) -->
@@ -428,6 +424,10 @@
           </div>
           <div id="bulkCampaigns" class="mb-3"></div>
           <p class="text-secondary small">ใช้โหมด "ตั้งกำไร → หาราคาขาย" กับค่าธรรมเนียมตามที่ตั้งไว้ด้านบน (เฉพาะหน้านี้ ไม่กระทบหน้าหลัก)</p>
+          <div class="d-flex justify-content-end gap-2 mb-2">
+            <button type="button" class="btn btn-primary btn-sm" id="btnAddBulkRow"><i class="bi bi-plus-lg me-1"></i>เพิ่มสินค้า</button>
+            <button type="button" class="btn btn-success btn-sm" id="btnExportBulkCSV"><i class="bi bi-file-earmark-excel me-1"></i>ส่งออก CSV</button>
+          </div>
           <div class="table-responsive" style="max-height: 60vh;">
             <table class="table table-hover align-middle sticky-head">
               <thead><tr id="bulkHead"></tr></thead>
