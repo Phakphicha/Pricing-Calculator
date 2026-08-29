@@ -459,11 +459,12 @@
 
               <h6 class="fw-bold mb-2 text-secondary"><i class="bi bi-layers me-1"></i>หมวดหมู่สินค้า (Preset)</h6>
               <select class="form-select" id="categoryPreset">
-                <option value="fashion">แฟชั่น (Fashion)</option>
-                <option value="electronics" selected>มือถือและอุปกรณ์เสริม (Electronics)</option>
-                <option value="health">สุขภาพและความงาม (Health & Beauty)</option>
-                <option value="fmcg">สินค้าอุปโภคบริโภค (FMCG)</option>
-                <option value="custom">หมวดอื่น ๆ (ใส่อัตราเอง)</option>
+                <option value="fashion" selected>👗 เสื้อผ้าและแฟชั่น (Fashion)</option>
+                <option value="fmcg_beauty">💄 สุขภาพ ความงาม และของใช้ (Beauty & FMCG)</option>
+                <option value="gadget_acc">🎧 อุปกรณ์เสริมมือถือ & Gadget Accessories</option>
+                <option value="electronics">📱 มือถือ แท็บเล็ต คอมพิวเตอร์ (Electronics)</option>
+                <option value="appliances">🔌 เครื่องใช้ไฟฟ้าในบ้าน (Home Appliances)</option>
+                <option value="custom">⚙️ หมวดอื่น ๆ (กำหนดค่าธรรมเนียมเอง)</option>
               </select>
               <div class="form-text">เลือกหมวดหมู่เพื่อโหลดอัตราค่าคอมมิชชันมาตรฐานของแต่ละแพลตฟอร์มอัตโนมัติ</div>
 
@@ -555,10 +556,11 @@
             <div class="col-md-4">
               <label class="form-label fw-bold"><i class="bi bi-layers me-1"></i>หมวดหมู่สินค้า (Preset)</label>
               <select class="form-select" id="bulkCategory">
-                <option value="fashion">แฟชั่น (Fashion)</option>
-                <option value="electronics" selected>มือถือและอุปกรณ์เสริม (Electronics)</option>
-                <option value="health">สุขภาพและความงาม (Health & Beauty)</option>
-                <option value="fmcg">สินค้าอุปโภคบริโภค (FMCG)</option>
+                <option value="fashion" selected>👗 เสื้อผ้าและแฟชั่น (Fashion)</option>
+                <option value="fmcg_beauty">💄 สุขภาพ ความงาม และของใช้ (Beauty & FMCG)</option>
+                <option value="gadget_acc">🎧 อุปกรณ์เสริมมือถือ & Gadget Accessories</option>
+                <option value="electronics">📱 มือถือ แท็บเล็ต คอมพิวเตอร์ (Electronics)</option>
+                <option value="appliances">🔌 เครื่องใช้ไฟฟ้าในบ้าน (Home Appliances)</option>
               </select>
             </div>
             <div class="col-md-4">
@@ -1178,29 +1180,38 @@ function toggleBreakdown(id) {
 }
 /* Apply preset ค่าธรรมเนียมให้ list แพลตฟอร์มใด ๆ (ใช้ร่วมทั้งหน้าหลักและหน้า Bulk) */
 function applyPresetTo(list, cat, sellerType, payId) {
+  if (cat === 'custom') return;
   const isSmall = sellerType.endsWith('_small');
   const isMall = sellerType.startsWith('mall');
   const shopee = list.find(p => p.id === 'shopee');
   const tiktok = list.find(p => p.id === 'tiktok');
   const lazada = list.find(p => p.id === 'lazada');
 
-  const shopeePreset = SHOPEE_COMM_PRESETS[cat];
-  if (shopeePreset) shopee.commissionPct = shopeePreset[sellerType];
-
-  const ttPreset = TIKTOK_COMM_PRESETS[cat];
-  if (ttPreset) {
-    tiktok.commissionPct = isMall ? ttPreset.mall : ttPreset.nonmall;
-    const growth = cat === 'electronics' ? TIKTOK_GROWTH.electronics : TIKTOK_GROWTH.other;
-    tiktok.growthPct = isSmall ? growth.small : growth.normal;
+  if (shopee) {
+    const shopeeComm = SHOPEE_COMM_PRESETS[cat] || SHOPEE_COMM_PRESETS.fashion;
+    shopee.commissionPct = shopeeComm[sellerType] || shopeeComm.nonmall;
+    shopee.campaignPct = SHOPEE_SERVICE_PRESETS[cat] || 8.56;
+    shopee.infraFee = 1.07;
   }
 
-  const lzPreset = LAZADA_COMM_PRESETS[cat];
-  if (lzPreset) lazada.commissionPct = isMall ? lzPreset.mall : lzPreset.nonmall;
+  if (tiktok) {
+    const ttComm = TIKTOK_COMM_PRESETS[cat] || TIKTOK_COMM_PRESETS.fashion;
+    tiktok.commissionPct = isMall ? ttComm.mall : ttComm.nonmall;
+    tiktok.growthPct = TIKTOK_GROWTH_PRESETS[cat] || 6.42;
+    tiktok.growthCap = TIKTOK_GROWTH_CAP;
+    tiktok.infraFee = 1.07;
+    tiktok.paymentPct = 3.21;
+  }
 
-  tiktok.paymentPct = 3.21;
-  lazada.paymentPct = 3.21;
+  if (lazada) {
+    const lzComm = LAZADA_COMM_PRESETS[cat] || LAZADA_COMM_PRESETS.fashion;
+    lazada.commissionPct = isMall ? lzComm.mall : lzComm.nonmall;
+    lazada.infraFee = 0.00; // Lazada ไม่มี Platform Fee
+    lazada.paymentPct = 3.21;
+  }
+
   const payMethod = SHOPEE_PAY_METHODS.find(m => m.id === payId) || SHOPEE_PAY_METHODS[0];
-  shopee.paymentPct = payMethod.pct;
+  if (shopee) shopee.paymentPct = payMethod.pct;
 }
 function applyPreset() {
   applyPresetTo(PLATFORMS, $id('categoryPreset').value, $id('sellerType').value, $id('shopeePayMethod').value);
