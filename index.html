@@ -187,6 +187,49 @@
     .bulk-price { font-weight: 600; }
     .bulk-warn { color: #f87171; font-weight: 600; }
 
+    
+    /* ── 5 E-Commerce Advanced Features CSS ── */
+    /* Packaging Presets */
+    .pkg-btn-group { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .pkg-preset-btn {
+      background: rgba(255, 255, 255, .06); border: 1px solid var(--border);
+      color: var(--muted); border-radius: 6px; font-size: .73rem; padding: 2px 6px;
+      transition: all .15s;
+    }
+    .pkg-preset-btn:hover, .pkg-preset-btn.active {
+      background: rgba(238, 77, 45, .25); border-color: var(--brand); color: #fff;
+    }
+
+    /* Psychological Price Chips */
+    .psy-chip-container { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 8px; }
+    .psy-chip {
+      background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .15);
+      border-radius: 999px; padding: 3px 10px; font-size: .76rem; color: #fff;
+      transition: all .15s; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; text-decoration: none;
+    }
+    .psy-chip:hover {
+      background: rgba(255, 255, 255, .22); border-color: #fff; transform: translateY(-1px); color: #fff;
+    }
+    .psy-chip .diff-pos { color: #34d399; font-weight: 600; font-size: .72rem; }
+    .psy-chip .diff-neg { color: #f87171; font-weight: 600; font-size: .72rem; }
+
+    /* ROAS & CPA Badge Box */
+    .metric-badge-box {
+      background: rgba(0, 0, 0, .32); border: 1px solid rgba(255, 255, 255, .08);
+      border-radius: 10px; padding: 6px 10px; margin-bottom: 8px; font-size: .78rem;
+    }
+    .metric-badge-item { display: flex; justify-content: space-between; align-items: center; padding: 1px 0; }
+    .metric-val { font-weight: 600; color: #38bdf8; font-variant-numeric: tabular-nums; }
+
+    /* Copy Button */
+    .btn-copy-price {
+      background: rgba(255, 255, 255, .12); border: 1px solid rgba(255, 255, 255, .2);
+      color: #fff; border-radius: 8px; font-size: .75rem; padding: 2px 7px; transition: all .15s;
+    }
+    .btn-copy-price:hover {
+      background: #fff; color: #100e0b;
+    }
+
     /* ── Alerts ── */
     .alert-warning { background: rgba(245, 158, 11, .12); border-color: rgba(245, 158, 11, .35); color: #fbbf24; }
 
@@ -285,6 +328,14 @@
                 <div class="col-6">
                   <label class="form-label fw-bold">ค่าแพ็ก/กล่อง (บาท)</label>
                   <input type="number" step="0.01" class="form-control" id="packCost" value="0">
+                  <div class="pkg-btn-group" title="เลือกขนาดกล่องพัสดุสำเร็จรูป">
+                    <button type="button" class="pkg-preset-btn active" onclick="setPackagingPreset(0, this)">0฿</button>
+                    <button type="button" class="pkg-preset-btn" onclick="setPackagingPreset(2, this)">ซอง 2฿</button>
+                    <button type="button" class="pkg-preset-btn" onclick="setPackagingPreset(3, this)">00 3฿</button>
+                    <button type="button" class="pkg-preset-btn" onclick="setPackagingPreset(4, this)">0/A 4฿</button>
+                    <button type="button" class="pkg-preset-btn" onclick="setPackagingPreset(5.5, this)">2A/B 5.5฿</button>
+                    <button type="button" class="pkg-preset-btn" onclick="setPackagingPreset(7.5, this)">C 7.5฿</button>
+                  </div>
                 </div>
               </div>
 
@@ -308,14 +359,18 @@
               <hr>
 
               <h6 class="fw-bold mb-3 text-secondary"><i class="bi bi-percent me-1"></i>อัตราส่วนเพิ่มเติม (%)</h6>
-              <div class="row g-3">
-                <div class="col-6">
-                  <label class="form-label" title="งบโฆษณาเฉลี่ยต่อการขาย 1 ชิ้น (%)">งบโฆษณา (%)</label>
+              <div class="row g-2">
+                <div class="col-4">
+                  <label class="form-label" title="งบโฆษณาเฉลี่ยต่อการขาย 1 ชิ้น (%)" style="font-size:.8rem">งบ Ads (%)</label>
                   <input type="number" step="0.01" class="form-control" id="adsFee" value="3.00">
                 </div>
-                <div class="col-6">
-                  <label class="form-label" title="วอลเชอร์/ส่วนลดที่ร้านแบกเอง (%)">วอลเชอร์ / ส่วนลด (%)</label>
+                <div class="col-4">
+                  <label class="form-label" title="วอลเชอร์/ส่วนลดที่ร้านแบกเอง (%)" style="font-size:.8rem">วอลเชอร์ (%)</label>
                   <input type="number" step="0.01" class="form-control" id="voucherFee" value="0">
+                </div>
+                <div class="col-4">
+                  <label class="form-label" title="เผื่อต้นทุนสินค้าตีกลับ/เคลม โดยเฉพาะออเดอร์เก็บเงินปลายทาง COD (%)" style="font-size:.8rem">ตีกลับ/Loss (%)</label>
+                  <input type="number" step="0.01" class="form-control" id="returnBuffer" value="0" placeholder="0">
                 </div>
               </div>
 
@@ -677,6 +732,76 @@ const fmt = n => (Math.round((+n || 0) * 100) / 100).toLocaleString('th-TH', { m
 const num = v => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
 const $id = id => document.getElementById(id);
 
+
+/* ═══════════ 5 E-Commerce Features Helpers ═══════════ */
+
+/* 1. Packaging Preset Selection */
+function setPackagingPreset(val, btn) {
+  document.querySelectorAll('.pkg-preset-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  $id('packCost').value = val;
+  $id('packCost').dispatchEvent(new Event('input'));
+}
+
+/* 2. One-Click Copy Price */
+function copyPrice(price, platformName) {
+  const formatted = Number.isInteger(price) ? price.toString() : price.toFixed(2);
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(formatted).then(() => {
+      Swal.fire({
+        toast: true, position: 'top-end', icon: 'success',
+        title: `คัดลอกราคา ${platformName} ฿${fmt(price)} แล้ว!`,
+        showConfirmButton: false, timer: 1800, timerProgressBar: true
+      });
+    }).catch(() => {
+      prompt('คัดลอกราคาขาย:', formatted);
+    });
+  } else {
+    prompt('คัดลอกราคาขาย:', formatted);
+  }
+}
+
+/* 3. Psychological Price Suggestions */
+function getPsychologicalPrices(basePrice, p, form) {
+  if (basePrice <= 0 || form.calcMode !== 'target') return [];
+  const suggestions = new Set();
+  
+  // Option 1: ลงท้าย 9 เช่น 239, 49
+  const ceil9 = Math.ceil((basePrice - 9) / 10) * 10 + 9;
+  if (ceil9 >= basePrice && ceil9 < basePrice + 35) suggestions.add(ceil9);
+
+  // Option 2: ลงท้าย 49 หรือ 99 เช่น 249, 299
+  const ceil49 = Math.ceil((basePrice - 49) / 50) * 50 + 49;
+  if (ceil49 >= basePrice && ceil49 < basePrice + 70) suggestions.add(ceil49);
+
+  const ceil99 = Math.ceil((basePrice - 99) / 100) * 100 + 99;
+  if (ceil99 >= basePrice && ceil99 < basePrice + 120) suggestions.add(ceil99);
+
+  // Option 3: เลขกลม 10s เช่น 240, 250
+  const ceil10 = Math.ceil(basePrice / 10) * 10;
+  if (ceil10 >= basePrice && ceil10 < basePrice + 25) suggestions.add(ceil10);
+
+  const arr = Array.from(suggestions).sort((a, b) => a - b).slice(0, 3);
+  return arr.map(sp => {
+    const evalForm = { ...form, sellPrice: sp, calcMode: 'evaluate' };
+    const r = calcPlatform(p, evalForm);
+    const diff = r.profit - form.targetProfit;
+    return { price: sp, profit: r.profit, diff };
+  });
+}
+
+function applyPsyPrice(targetPrice) {
+  $id('modeEvaluate').checked = true;
+  $id('modeEvaluate').dispatchEvent(new Event('change'));
+  $id('sellPrice').value = targetPrice;
+  $id('sellPrice').dispatchEvent(new Event('input'));
+  Swal.fire({
+    toast: true, position: 'top-end', icon: 'info',
+    title: `เปลี่ยนมาดูผลกำไรที่ราคา ฿${fmt(targetPrice)}`,
+    showConfirmButton: false, timer: 2000, timerProgressBar: true
+  });
+}
+
 /* ---------- อ่านค่าจากฟอร์ม ---------- */
 function readForm() {
   return {
@@ -687,6 +812,7 @@ function readForm() {
     sellPrice: num($id('sellPrice').value),
     adsFee: num($id('adsFee').value),
     voucherFee: num($id('voucherFee').value),
+    returnBuffer: num($id('returnBuffer')?.value || 0),
     calcMode: document.querySelector('input[name="calcMode"]:checked').value,
     category: $id('categoryPreset').value
   };
@@ -706,39 +832,38 @@ function platformFees(p, price, form) {
   const campaignFee   = p.campaignOn ? price * p.campaignPct / 100 : 0;
   const growthFee     = p.growthPct ? Math.min(price * p.growthPct / 100, p.growthCap || Infinity) : 0;
   const adsFeeBaht    = price * ((form.adsFee + form.voucherFee) / 100);
-  return { commissionFee, paymentFee, serviceFee, campaignFee, growthFee, adsFeeBaht };
+  const lossFee       = price * ((form.returnBuffer || 0) / 100);
+  return { commissionFee, paymentFee, serviceFee, campaignFee, growthFee, adsFeeBaht, lossFee };
 }
 
 function calcPlatform(p, form) {
   const totalCost = form.productCost + form.packCost;
+  const lossBufferPct = form.returnBuffer || 0;
   const pctSum = p.commissionPct + p.paymentPct + p.servicePct +
-                 (p.campaignOn ? p.campaignPct : 0) + form.adsFee + form.voucherFee;
+                 (p.campaignOn ? p.campaignPct : 0) + form.adsFee + form.voucherFee + lossBufferPct;
   const feeDecimal = pctSum / 100;
   const totalFeePercent = pctSum + (p.growthPct || 0);
 
   /* ส่วนเชิงเส้น (ไม่มีเพดาน) ต้องต่ำกว่า 100% จึงจะคำนวณได้ */
   if (feeDecimal >= 1) {
     return { error: true, warning: 'ค่าธรรมเนียมรวม (ส่วนที่ไม่มีเพดาน) ≥ 100% — ไม่สามารถคำนวณได้', price: 0, profit: 0, marginPercent: 0,
-             commissionFee: 0, paymentFee: 0, serviceFee: 0, campaignFee: 0, growthFee: 0, adsFeeBaht: 0, totalFeePercent, totalDeduction: 0, totalCost: 0 };
+             commissionFee: 0, paymentFee: 0, serviceFee: 0, campaignFee: 0, growthFee: 0, adsFeeBaht: 0, lossFee: 0, totalFeePercent, totalDeduction: 0, totalCost: 0, breakEvenRoas: 0, maxCpa: 0 };
   }
 
   let price;
   if (form.calcMode === 'target') {
-    /* กำไรขากลับที่ราคา p: g(p) = p − fees(p) − infra − totalCost  (เพิ่มขึ้นตามราคาเสมอ) */
+    /* กำไรขากลับที่ราคา p: g(p) = p − fees(p) − infra − totalCost */
     const g = pr => {
       const f = platformFees(p, pr, form);
-      return pr - (f.commissionFee + f.paymentFee + f.serviceFee + f.campaignFee + f.growthFee + f.adsFeeBaht) - p.infraFee - totalCost;
+      return pr - (f.commissionFee + f.paymentFee + f.serviceFee + f.campaignFee + f.growthFee + f.adsFeeBaht + f.lossFee) - p.infraFee - totalCost;
     };
-    /* ค่าตั้งต้นจากสูตรเชิงเส้น (แม่นยำเมื่อไม่มี growth fee) */
     let lo = 0, hi = (totalCost + form.targetProfit + p.infraFee) / (1 - feeDecimal);
     if (g(hi) < form.targetProfit) {
-      /* ยังไม่ถึงเป้า → ขยายขอบบนจนกว่าจะเกินเป้า (สูงสุด 60 รอบ กันลูปไม่รู้จบ) */
       let ok = false;
       for (let i = 0; i < 60 && hi < 1e9; i++) { hi *= 1.5; if (g(hi) >= form.targetProfit) { ok = true; break; } }
       if (!ok) return { error: true, warning: 'ไม่พบราคาขายที่ทำให้ได้กำไรตามเป้าหมาย', price: 0, profit: 0, marginPercent: 0,
-        commissionFee: 0, paymentFee: 0, serviceFee: 0, campaignFee: 0, growthFee: 0, adsFeeBaht: 0, totalFeePercent, totalDeduction: 0, totalCost };
+        commissionFee: 0, paymentFee: 0, serviceFee: 0, campaignFee: 0, growthFee: 0, adsFeeBaht: 0, lossFee: 0, totalFeePercent, totalDeduction: 0, totalCost, breakEvenRoas: 0, maxCpa: 0 };
     }
-    /* bisection 50 รอบ → แม่นยำระดับสตาง */
     for (let i = 0; i < 50; i++) {
       const mid = (lo + hi) / 2;
       (g(mid) < form.targetProfit) ? lo = mid : hi = mid;
@@ -749,9 +874,15 @@ function calcPlatform(p, form) {
   }
 
   const f = platformFees(p, price, form);
-  const totalDeduction = f.commissionFee + f.paymentFee + f.serviceFee + f.campaignFee + f.growthFee + f.adsFeeBaht + p.infraFee;
+  const totalDeduction = f.commissionFee + f.paymentFee + f.serviceFee + f.campaignFee + f.growthFee + f.adsFeeBaht + f.lossFee + p.infraFee;
   const profit = price - totalDeduction - totalCost;
   const marginPercent = price > 0 ? (profit / price) * 100 : 0;
+
+  // ROAS & Max CPA (จุดคุ้มทุนแอด)
+  const deductionsWithoutAds = f.commissionFee + f.paymentFee + f.serviceFee + f.campaignFee + f.growthFee + f.lossFee + p.infraFee;
+  const profitBeforeAds = price - deductionsWithoutAds - totalCost;
+  const maxCpa = Math.max(0, profitBeforeAds);
+  const breakEvenRoas = (maxCpa > 0 && price > 0) ? (price / maxCpa) : 0;
 
   let warning = '';
   if (form.calcMode === 'evaluate' && profit < 0) warning = '⚠️ ขายที่ราคานี้จะขาดทุน ฿' + fmt(Math.abs(profit)) + ' ต่อชิ้น';
@@ -759,8 +890,8 @@ function calcPlatform(p, form) {
 
   return { error: false, warning, price, profit, marginPercent,
            commissionFee: f.commissionFee, paymentFee: f.paymentFee, serviceFee: f.serviceFee,
-           campaignFee: f.campaignFee, growthFee: f.growthFee, adsFeeBaht: f.adsFeeBaht,
-           totalDeduction, totalFeePercent, totalCost };
+           campaignFee: f.campaignFee, growthFee: f.growthFee, adsFeeBaht: f.adsFeeBaht, lossFee: f.lossFee,
+           totalDeduction, totalFeePercent, totalCost, breakEvenRoas, maxCpa };
 }
 
 /* ---------- Render: การ์ดแพลตฟอร์ม ---------- */
@@ -772,11 +903,33 @@ function renderPlatforms() {
     const feeTotal = r.error ? 0 : r.totalDeduction;
     const profitPart = r.error || r.profit < 0 ? 0 : r.profit;
 
+    // Psychological Pricing Suggestions (สำหรับโหมดตั้งกำไร)
+    const psySuggestions = getPsychologicalPrices(r.price, p, form);
+    const psyHtml = (psySuggestions.length > 0 && form.calcMode === 'target' && !r.error) ? `
+      <div class="psy-chip-container" title="คลิกเพื่อทดสอบราคาจิตวิทยา">
+        <span class="small opacity-75 me-1" style="font-size:.72rem">ปัดราคา:</span>
+        ${psySuggestions.map(s => `
+          <a class="psy-chip" onclick="applyPsyPrice(${s.price})">
+            ฿${s.price} <span class="${s.diff >= 0 ? 'diff-pos' : 'diff-neg'}">(${s.diff >= 0 ? '+' : ''}฿${fmt(s.diff)})</span>
+          </a>`).join('')}
+      </div>` : '';
+
     const headline = form.calcMode === 'target'
-      ? `<span class="d-block small opacity-75 mb-1">ราคาขายที่แนะนำ</span>
+      ? `<div class="d-flex justify-content-between align-items-center mb-1">
+           <span class="small opacity-75">ราคาขายที่แนะนำ</span>
+           <button type="button" class="btn btn-copy-price" onclick="copyPrice(${r.price}, '${p.name}')" title="คัดลอกตัวเลขราคาขาย">
+             <i class="bi bi-copy me-1"></i>คัดลอก
+           </button>
+         </div>
          <span class="price-big">฿${fmt(r.price)}</span>
-         <span class="d-block small opacity-75 mt-1">รวมกำไรเป้าหมาย ฿${fmt(form.targetProfit)}/ชิ้น</span>`
-      : `<span class="d-block small opacity-75 mb-1">กำไรสุทธิ ณ ราคานี้</span>
+         <span class="d-block small opacity-75 mt-1">รวมกำไรเป้าหมาย ฿${fmt(form.targetProfit)}/ชิ้น</span>
+         ${psyHtml}`
+      : `<div class="d-flex justify-content-between align-items-center mb-1">
+           <span class="small opacity-75">กำไรสุทธิ ณ ราคานี้</span>
+           <button type="button" class="btn btn-copy-price" onclick="copyPrice(${r.price}, '${p.name}')" title="คัดลอกตัวเลขราคาขาย">
+             <i class="bi bi-copy me-1"></i>คัดลอกราคา
+           </button>
+         </div>
          <span class="price-big ${r.profit < 0 ? 'text-warning' : ''}">฿${fmt(r.profit)}</span>
          <span class="d-block small opacity-75 mt-1">อัตรากำไร ${fmt(r.marginPercent)}%</span>`;
 
@@ -793,6 +946,18 @@ function renderPlatforms() {
             <input type="number" step="0.01" class="form-control form-control-sm" value="${p.paymentPct}" onchange="setPlatformFee('${p.id}','paymentPct',this.value)"></div>
           <div class="col-4"><label class="form-label small mb-0 opacity-75">ค่าธรรมเนียม ฿</label>
             <input type="number" step="0.01" class="form-control form-control-sm" value="${p.infraFee}" onchange="setPlatformFee('${p.id}','infraFee',this.value)"></div>
+        </div>
+      </div>` : '';
+
+    const roasBadge = (!r.error && r.price > 0) ? `
+      <div class="metric-badge-box">
+        <div class="metric-badge-item">
+          <span class="opacity-75"><i class="bi bi-bullseye me-1" style="color:#38bdf8"></i>จุดคุ้มทุนแอด (ROAS)</span>
+          <span class="metric-val">${r.breakEvenRoas > 0 ? r.breakEvenRoas.toFixed(2) + 'x' : '-'}</span>
+        </div>
+        <div class="metric-badge-item">
+          <span class="opacity-75"><i class="bi bi-cash-stack me-1" style="color:#34d399"></i>งบแอดสูงสุดไม่ขาดทุน (Max CPA)</span>
+          <span class="metric-val">฿${fmt(r.maxCpa)}/ชิ้น</span>
         </div>
       </div>` : '';
 
@@ -814,6 +979,7 @@ function renderPlatforms() {
         ${p.enabled ? `
         ${feeEditor}
         <div class="result-box p-3 text-center mb-2">${headline}</div>
+        ${roasBadge}
 
         ${r.warning ? `<div class="small rounded-2 px-3 py-2 mb-2" style="background:rgba(220,38,38,.25)">${r.warning}</div>` : ''}
 
@@ -829,6 +995,7 @@ function renderPlatforms() {
             ${p.campaignOn ? `<div class="breakdown-item"><span>แคมเปญ (${p.campaignPct}%)</span><span>-฿${fmt(r.campaignFee)}</span></div>` : ''}
             ${p.growthPct ? `<div class="breakdown-item"><span>ค่าธรรมเนียมสนับสนุนการเติบโต (${p.growthPct}% ไม่เกิน ฿${p.growthCap})</span><span>-฿${fmt(r.growthFee)}</span></div>` : ''}
             <div class="breakdown-item"><span>Ads + วอลเชอร์ (${form.adsFee + form.voucherFee}%)</span><span>-฿${fmt(r.adsFeeBaht)}</span></div>
+            ${form.returnBuffer > 0 ? `<div class="breakdown-item"><span>เผื่อของตีกลับ/Loss (${form.returnBuffer}%)</span><span>-฿${fmt(r.lossFee)}</span></div>` : ''}
             ${p.infraFee > 0 ? `<div class="breakdown-item"><span>ค่าธรรมเนียมโครงสร้างพื้นฐาน</span><span>-฿${fmt(p.infraFee)}</span></div>` : ''}
             <div class="breakdown-item"><span>ต้นทุนสินค้า + บรรจุภัณฑ์</span><span>-฿${fmt(r.totalCost)}</span></div>
             <div class="breakdown-item breakdown-total"><span>รวม % ค่าธรรมเนียม</span><span>${fmt(r.totalFeePercent)}%</span></div>
@@ -1176,7 +1343,7 @@ function buildShareUrl() {
   const f = readForm();
   const q = new URLSearchParams({
     sh: 1, m: f.calcMode, n: f.productName, c: f.productCost, p: f.packCost,
-    t: f.targetProfit, s: f.sellPrice, a: f.adsFee, v: f.voucherFee,
+    t: f.targetProfit, s: f.sellPrice, a: f.adsFee, v: f.voucherFee, ret: f.returnBuffer,
     cat: f.category, st: $id('sellerType').value, pay: $id('shopeePayMethod').value,
     ps: PLATFORMS.filter(x => x.enabled).map(x => x.id).join(',')
   });
@@ -1195,6 +1362,7 @@ function applyShareUrl() {
   set('sellPrice', q.get('s'));
   set('adsFee', q.get('a'));
   set('voucherFee', q.get('v'));
+  set('returnBuffer', q.get('ret') || '0');
   set('categoryPreset', q.get('cat') || 'fashion');
   set('sellerType', q.get('st') || 'nonmall');
   if (q.get('pay')) $id('shopeePayMethod').value = q.get('pay');
