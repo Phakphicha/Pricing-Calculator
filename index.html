@@ -230,6 +230,41 @@
       background: #fff; color: #100e0b;
     }
 
+    
+    /* ── Affiliate & Partner Deals CSS ── */
+    .affiliate-section {
+      background: linear-gradient(135deg, rgba(30, 41, 59, .75), rgba(15, 23, 42, .85));
+      border: 1px solid rgba(245, 158, 11, .3) !important;
+      border-radius: var(--radius-lg);
+    }
+    .affiliate-section h5 { color: #fbbf24; font-weight: 600; }
+    .aff-card-item {
+      background: rgba(0, 0, 0, .28); border: 1px solid var(--border);
+      border-radius: 12px; padding: 12px 14px; transition: all .2s;
+      height: 100%; display: flex; flex-column; justify-content: space-between;
+    }
+    .aff-card-item:hover {
+      border-color: rgba(245, 158, 11, .5); transform: translateY(-2px);
+      box-shadow: 0 4px 14px rgba(0,0,0,.35);
+    }
+    .aff-badge-tag {
+      background: rgba(245, 158, 11, .15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, .3);
+      font-size: .68rem; font-weight: 600; padding: 2px 6px; border-radius: 4px;
+    }
+    .btn-aff-cta {
+      background: linear-gradient(135deg, #d97706, #f59e0b); border: none; color: #fff;
+      font-size: .78rem; font-weight: 500; border-radius: 8px; padding: 5px 12px;
+      text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
+      transition: all .15s;
+    }
+    .btn-aff-cta:hover {
+      background: linear-gradient(135deg, #b45309, #d97706); color: #fff; transform: translateY(-1px);
+    }
+    .aff-pack-link {
+      color: #fbbf24 !important; font-size: .75rem; text-decoration: none; transition: all .15s;
+    }
+    .aff-pack-link:hover { text-decoration: underline !important; color: #fde68a !important; }
+
     /* ── Alerts ── */
     .alert-warning { background: rgba(245, 158, 11, .12); border-color: rgba(245, 158, 11, .35); color: #fbbf24; }
 
@@ -288,6 +323,9 @@
         <span class="badge bg-success-subtle text-success border border-success-subtle d-none d-md-inline-flex">
           <i class="bi bi-patch-check-fill me-1"></i>อัปเดตค่าธรรมเนียมล่าสุด 2026
         </span>
+        <button class="btn btn-outline-warning btn-sm rounded-pill px-3" onclick="openDealsModal()">
+          <i class="bi bi-tag-fill me-1"></i>ดีลพิเศษร้านค้า
+        </button>
         <button id="btnDonate" class="btn btn-donate btn-sm rounded-pill px-3" onclick="openDonateModal()">
           <i class="bi bi-cup-hot-fill me-1"></i>สนับสนุนเรา
         </button>
@@ -326,7 +364,12 @@
                   <input type="number" step="0.01" class="form-control" id="productCost" value="200">
                 </div>
                 <div class="col-6">
-                  <label class="form-label fw-bold">ค่าแพ็ก/กล่อง (บาท)</label>
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label class="form-label fw-bold mb-0">ค่าแพ็ก/กล่อง (บาท)</label>
+                    <a href="javascript:void(0)" onclick="openAffiliateLink('packaging')" class="aff-pack-link" title="สั่งซื้อกล่องพัสดุและซองไปรษณีย์ราคาส่ง">
+                      <i class="bi bi-box-seam me-1"></i>สั่งกล่องราคาส่ง
+                    </a>
+                  </div>
                   <input type="number" step="0.01" class="form-control" id="packCost" value="0">
                   <div class="pkg-btn-group" title="เลือกขนาดกล่องพัสดุสำเร็จรูป">
                     <button type="button" class="pkg-preset-btn active" onclick="setPackagingPreset(0, this)">0฿</button>
@@ -1071,6 +1114,7 @@ function renderCampaigns() {
 }
 function setCampaignPct(id, val) {
   PLATFORMS.find(x => x.id === id).campaignPct = num(val); renderPlatforms();
+  renderAffiliateDeals();
 }
 
 /* ---------- Interactions ---------- */
@@ -1462,6 +1506,104 @@ async function shareCalc() {
   } else {
     Swal.fire({ icon: 'success', title: 'ดาวน์โหลดรูปแล้ว', text: url, confirmButtonColor: '#EE4D2D' });
   }
+}
+
+
+/* ═══════════════════════════════════════════════════════════
+   E-Commerce Affiliate Marketing & Partner Deals Config
+   (คุณสามารถเปลี่ยน URL หรือโค้ดส่วนลดเป็นลิงก์ Affiliate ของคุณได้ที่นี่)
+   ═══════════════════════════════════════════════════════════ */
+const AFFILIATE_DEALS = [
+  {
+    id: 'packaging',
+    icon: '📦',
+    title: 'กล่องพัสดุ & ซองไปรษณีย์ ราคาส่งโรงงาน',
+    desc: 'กล่องเบอร์ 00, 0, A, 2A, B, C ซองพลาสติกกันน้ำ บับเบิ้ลกันกระแทกราคาโรงงาน',
+    tag: 'ลดต้นทุนแพ็ก',
+    btnText: 'สั่งซื้อราคาส่ง',
+    link: 'https://shopee.co.th/search?keyword=%E0%B8%81%E0%B8%A foreigners%E0%B8%87%E0%B8%9E%E0%B8%B1%E0%B8%AA%E0%B8%94%E0%B8%B8+%E0%B8%A3%E0%B8%B2%E0%B8%84%E0%B8%B2%E0%B8%AA%E0%B9%88%E0%B8%87'
+  },
+  {
+    id: 'printer',
+    icon: '🖨️',
+    title: 'เครื่องปริ้นใบปะหน้าพัสดุ (Thermal Printer)',
+    desc: 'เครื่องพิมพ์ความร้อนไร้หมึก ปริ้นใบปะหน้า Shopee, TikTok, Lazada, Flash รวดเร็ว',
+    tag: 'ประหยัดเวลา',
+    btnText: 'ดูรุ่นแนะนำ',
+    link: 'https://shopee.co.th/search?keyword=%E0%B9%80%E0%B8%84%E0%B8%A3%E0%B8%B7%E0%B9%88%E0%B8%AD%E0%B8%87%E0%B8%9B%E0%B8%A3%E0%B8%B4%E0%B9%89%E0%B8%99%E0%B9%83%E0%B8%9A%E0%B8%9B%E0%B8%B0%E0%B8%AB%E0%B8%99%E0%B9%89%E0%B8%B2'
+  },
+  {
+    id: 'oms',
+    icon: '⚡',
+    title: 'โปรแกรมรวมแชท & ตัดสต็อกอัตโนมัติ',
+    desc: 'เชื่อมต่อสต็อก Shopee + TikTok Shop + Lazada ในที่เดียว ป้องกันสต็อกชน',
+    tag: 'ทดลองใช้ฟรี',
+    btnText: 'รับสิทธิ์ฟรี',
+    link: 'https://zortout.com'
+  },
+  {
+    id: 'shipping',
+    icon: '🚚',
+    title: 'บริการขนส่ง & เรียกรถรับพัสดุถึงบ้าน',
+    desc: 'เรทค่าส่งพิเศษสำหรับร้านค้าออนไลน์ มีประกันสินค้า และเข้ารับฟรีถึงหน้าบ้าน',
+    tag: 'ส่วนลดค่าส่ง',
+    btnText: 'ดูเรทพิเศษ',
+    link: 'https://flashexpress.com'
+  }
+];
+
+function openAffiliateLink(id) {
+  const item = AFFILIATE_DEALS.find(x => x.id === id) || AFFILIATE_DEALS[0];
+  window.open(item.link, '_blank', 'noopener,noreferrer');
+}
+
+function renderAffiliateDeals() {
+  const el = $id('affiliateGrid');
+  if (!el) return;
+  el.innerHTML = AFFILIATE_DEALS.map(d => `
+    <div class="col-md-6">
+      <div class="aff-card-item">
+        <div class="d-flex align-items-start gap-2 mb-2">
+          <span style="font-size:1.6rem;line-height:1">${d.icon}</span>
+          <div class="flex-grow-1">
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="fw-semibold text-white small">${d.title}</div>
+            </div>
+            <span class="aff-badge-tag mt-1 d-inline-block">${d.tag}</span>
+          </div>
+        </div>
+        <div class="text-secondary small mb-3" style="font-size:.78rem;line-height:1.45">${d.desc}</div>
+        <div class="text-end">
+          <a href="${d.link}" target="_blank" rel="noopener noreferrer" class="btn-aff-cta">
+            ${d.btnText} <i class="bi bi-box-arrow-up-right ms-1" style="font-size:.7rem"></i>
+          </a>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function openDealsModal() {
+  const itemsHtml = AFFILIATE_DEALS.map(d => `
+    <div class="p-3 mb-2 rounded-3 text-start" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)">
+      <div class="d-flex justify-content-between align-items-center mb-1">
+        <div class="fw-bold text-warning">${d.icon} ${d.title}</div>
+        <span class="badge text-bg-warning">${d.tag}</span>
+      </div>
+      <div class="small text-secondary mb-2">${d.desc}</div>
+      <div class="text-end">
+        <a href="${d.link}" target="_blank" rel="noopener" class="btn btn-warning btn-sm rounded-pill px-3 fw-medium">
+          ${d.btnText} <i class="bi bi-box-arrow-up-right ms-1"></i>
+        </a>
+      </div>
+    </div>`).join('');
+
+  Swal.fire({
+    title: '<i class="bi bi-tag-fill text-warning me-2"></i>ดีลพิเศษสำหรับร้านค้าออนไลน์',
+    html: `<div style="max-height:60vh;overflow-y:auto">${itemsHtml}</div>`,
+    confirmButtonText: 'ปิด',
+    confirmButtonColor: '#EE4D2D',
+    width: 540
+  });
 }
 
 /* ═══════════ INIT ═══════════ */
