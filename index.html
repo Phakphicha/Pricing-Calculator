@@ -601,94 +601,98 @@
   </footer>
 
 <script>
-/* ═══════════════════════════════════════════════════════════
-   Multi-Platform Pricing Calculator — Frontend Logic (Vanilla JS)
-   ═══════════════════════════════════════════════════════════ */
-
 /* ═══════════════════════════════════════════════════════════════════
-   Preset ค่าธรรมเนียม Shopee (ปรับปรุงตามนโยบายลงวันที่ 4 สิงหาคม 2026)
-   ค่าคอมมิชชัน (รวม VAT 7% แล้ว) แยกตามหมวดหมู่ × ประเภทร้านค้า:
-     nonmall       = ร้านค้าทั่วไป (7.49% – 17.12%)
-     nonmall_small = ร้านค้าทั่วไป ผู้ขายรายเล็ก (6.96% – 15.52%)
-     mall          = Shopee Mall (7.49% – 19.26%)
-     mall_small    = Shopee Mall ผู้ขายรายเล็ก (6.96% – 17.66%)
-   ค่าธรรมเนียมชำระเงิน: ปกติ 3.21% | SPayLater 4.28% – 7.49%
-   ค่าบริการโปรแกรมส่งฟรี/แคชแบ็ก: 3.21% – 5.35% (0% ถ้าไม่เข้าร่วม)
-   ค่าธรรมเนียมโครงสร้างพื้นฐาน: 1.07 บาท/ออเดอร์ (1 บาท + VAT 7%)
+   โครงสร้างค่าธรรมเนียมมาตรฐาน Shopee / Lazada / TikTok Shop (อัปเดตล่าสุด 2026)
+   อ้างอิงจากประกาศทางการของแพลตฟอร์ม และ FlowAccount (มีผล ส.ค. 2569)
    ═══════════════════════════════════════════════════════════════════ */
+
+/* 1. Shopee Sale Transaction Commission (มีผล 4 สิงหาคม 2569) */
 const SHOPEE_COMM_PRESETS = {
   fashion:     { nonmall: 17.12, nonmall_small: 15.52, mall: 19.26, mall_small: 17.66 },
-  electronics: { nonmall: 16.05, nonmall_small: 14.52, mall: 18.08, mall_small: 16.58 },
-  health:      { nonmall: 14.98, nonmall_small: 13.90, mall: 17.12, mall_small: 16.05 },
-  fmcg:        { nonmall: 7.49,  nonmall_small: 6.96,  mall: 8.56,  mall_small: 7.49  }
+  fmcg_beauty: { nonmall: 16.05, nonmall_small: 14.98, mall: 19.26, mall_small: 17.66 },
+  gadget_acc:  { nonmall: 16.05, nonmall_small: 14.98, mall: 17.66, mall_small: 16.05 },
+  electronics: { nonmall: 7.49,  nonmall_small: 6.96,  mall: 7.49,  mall_small: 6.96  },
+  appliances:  { nonmall: 14.98, nonmall_small: 13.91, mall: 16.59, mall_small: 14.98 }
+};
+
+/* Shopee Service Fee (โปรแกรมร้านโค้ดคุ้ม / PRIME Seller: 5.35% – 8.56%) */
+const SHOPEE_SERVICE_PRESETS = {
+  fashion: 8.56,
+  fmcg_beauty: 8.56,
+  gadget_acc: 7.49,
+  electronics: 5.35,
+  appliances: 6.42
 };
 
 /* ค่าธรรมเนียมชำระเงิน Shopee ตามวิธีการชำระ */
 const SHOPEE_PAY_METHODS = [
-  { id: 'normal',    label: 'ชำระปกติ (QR / บัตร / ShopeePay)', pct: 3.21 },
-  { id: 'spl_4',     label: 'SPayLater ผ่อน 3–4 เดือน',          pct: 4.28 },
-  { id: 'spl_6',     label: 'SPayLater ผ่อน 6 เดือน',            pct: 5.35 },
-  { id: 'spl_10',    label: 'SPayLater ผ่อน 9–10 เดือน',         pct: 6.42 },
-  { id: 'spl_12',    label: 'SPayLater ผ่อน 12 เดือน',           pct: 7.49 }
+  { id: 'normal',    label: 'ชำระปกติ (QR / บัตร / ShopeePay / COD)', pct: 3.21 },
+  { id: 'spl_4',     label: 'SPayLater ผ่อน 3–4 เดือน',               pct: 4.28 },
+  { id: 'spl_6',     label: 'SPayLater ผ่อน 6 เดือน',                 pct: 5.35 },
+  { id: 'spl_10',    label: 'SPayLater ผ่อน 9–10 เดือน',              pct: 6.42 },
+  { id: 'spl_12',    label: 'SPayLater ผ่อน 12 เดือน',                pct: 7.49 },
+  { id: 'cc_inst_3', label: 'ผ่อนบัตรเครดิต 3 เดือน',                 pct: 5.35 },
+  { id: 'cc_inst_6', label: 'ผ่อนบัตรเครดิต 6 เดือน',                 pct: 6.96 },
+  { id: 'cc_inst_10',label: 'ผ่อนบัตรเครดิต 10 เดือนขึ้นไป',          pct: 7.49 }
 ];
 
-/* Preset ของ TikTok Shop (รวม VAT 7% แล้ว)
-   Commission: Mall 5.35% – 11.77% | Non-Mall 6.42% – 10.70%
-   Commerce Growth Fee (บังคับ): อิเล็กทรอนิกส์ 6.96% (รายเล็ก 6.42%) |
-                                  หมวดอื่น 8.03% (รายเล็ก 7.49%) — เพดานหัก ≤ 199 บาท/ชิ้น
-   Transaction Fee: 3.21% | ค่าธรรมเนียมคงที่: 1.07 บาท/ออเดอร์ */
+/* 2. TikTok Shop Marketing Commission (อ้างอิง PDF tiktok non mall & mall) */
 const TIKTOK_COMM_PRESETS = {
   fashion:     { nonmall: 10.70, mall: 11.77 },
-  electronics: { nonmall: 6.42,  mall: 5.35  },
-  health:      { nonmall: 8.56,  mall: 9.63  },
-  fmcg:        { nonmall: 7.49,  mall: 6.42  }
+  fmcg_beauty: { nonmall: 10.70, mall: 11.77 },
+  gadget_acc:  { nonmall: 10.70, mall: 11.77 },
+  electronics: { nonmall: 6.42,  mall: 7.49  },
+  appliances:  { nonmall: 8.56,  mall: 9.63  }
 };
-const TIKTOK_GROWTH = {
-  electronics: { normal: 6.96, small: 6.42 },
-  other:       { normal: 8.03, small: 7.49 }
+
+/* TikTok Commerce Growth Fee (บังคับ, เพดาน ≤ 199 บาท/ชิ้น) */
+const TIKTOK_GROWTH_PRESETS = {
+  fashion:     6.42,
+  fmcg_beauty: 6.42,
+  gadget_acc:  6.42,
+  electronics: 5.35,
+  appliances:  5.35
 };
 const TIKTOK_GROWTH_CAP = 199; // เพดานหักต่อชิ้น (บาท)
 
-/* Preset ของ Lazada (รวม VAT 7% แล้ว)
-   Commission: LazMall 5.35% – 10.70% | Non-Mall 4.28% – 7.49%
-   Payment Fee: 3.21% | Free Shipping Max/Cashback: 3.21% – 5.35% (ถ้าเข้าร่วม)
-   ค่าธรรมเนียมคงที่: 1.07 บาท/ออเดอร์ */
+/* 3. Lazada Marketplace Commission (มีผล 1 สิงหาคม 2569) */
 const LAZADA_COMM_PRESETS = {
-  fashion:     { nonmall: 7.49, mall: 10.70 },
-  electronics: { nonmall: 4.28, mall: 5.35  },
-  health:      { nonmall: 6.42, mall: 8.56  },
-  fmcg:        { nonmall: 5.35, mall: 7.49  }
+  fashion:     { nonmall: 17.12, mall: 18.73 },
+  fmcg_beauty: { nonmall: 16.05, mall: 18.73 },
+  gadget_acc:  { nonmall: 16.05, mall: 16.59 },
+  electronics: { nonmall: 6.96,  mall: 6.96  },
+  appliances:  { nonmall: 13.91, mall: 14.98 }
 };
 
 /* ---------- นิยามแพลตฟอร์ม ---------- */
 const PLATFORMS = [
   {
     id: 'shopee', name: 'Shopee', cls: 'pc-shopee', enabled: true,
-    campaignLabel: 'Shopee ส่งฟรีพิเศษ / เหรียญแคชแบ็ก',
-    campaignOn: true, campaignPct: 5.35,
-    commissionPct: 16.05, paymentPct: 3.21, servicePct: 0, infraFee: 1.07,
+    campaignLabel: 'Shopee ร้านโค้ดคุ้ม (PRIME / ส่งฟรี Xtra / ส่วนลด Xtra)',
+    campaignOn: true, campaignPct: 8.56,
+    commissionPct: 17.12, paymentPct: 3.21, servicePct: 0, infraFee: 1.07,
     custom: false, showFees: false, open: false
   },
   {
     id: 'tiktok', name: 'TikTok Shop', cls: 'pc-tiktok', enabled: true,
     campaignLabel: 'TikTok Seller Campaign',
-    hasCampaign: false, campaignOn: false, campaignPct: 2.0,
-    commissionPct: 6.42, paymentPct: 3.21, servicePct: 0, infraFee: 1.07,
-    growthPct: 6.96, growthCap: TIKTOK_GROWTH_CAP,   // Commerce Growth Fee (บังคับ, เพดาน ≤199฿)
+    hasCampaign: false, campaignOn: false, campaignPct: 0,
+    commissionPct: 10.70, paymentPct: 3.21, servicePct: 0, infraFee: 1.07,
+    growthPct: 6.42, growthCap: TIKTOK_GROWTH_CAP,
     custom: false, showFees: false, open: false
   },
   {
     id: 'lazada', name: 'Lazada', cls: 'pc-lazada', enabled: true,
-    campaignLabel: 'Lazada Free Shipping Max / Cashback',
+    campaignLabel: 'Lazada Free Shipping Max / Cashback / Premium',
     hasCampaign: true, campaignOn: false, campaignPct: 5.35,
-    commissionPct: 4.28, paymentPct: 3.21, servicePct: 0, infraFee: 1.07,
+    commissionPct: 17.12, paymentPct: 3.21, servicePct: 0, infraFee: 0.00,
     custom: false, showFees: false, open: false
   },
   {
     id: 'custom', name: 'ช่องทางของฉัน', cls: 'pc-custom', enabled: false,
     campaignLabel: 'แคมเปญของช่องทางนี้',
     campaignOn: false, campaignPct: 2.0,
-    commissionPct: 5.0, paymentPct: 2.0, servicePct: 0, infraFee: 0,
+    commissionPct: 5.0, paymentPct: 2.0, servicePct: 0, infraFee: 0.00,
     custom: true, showFees: true, open: false
   }
 ];
