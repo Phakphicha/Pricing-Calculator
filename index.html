@@ -162,8 +162,20 @@
     .platform-card .form-check-input:checked { background-color: #fff; }
     .platform-card h5 { font-weight: 600; letter-spacing: .01em; }
 
-    .price-big { font-size: 2.1rem; font-weight: 700; line-height: 1.1; letter-spacing: -.01em; }
-    .result-box { background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.18); border-radius: 12px; }
+    .price-big { font-size: 1.68rem; font-weight: 700; line-height: 1.15; letter-spacing: -.01em; }
+    .result-box {
+      background: rgba(255,255,255,.14);
+      border: 1px solid rgba(255,255,255,.18);
+      border-radius: 12px;
+      min-height: 80px;
+      height: 80px;
+      padding: 6px 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      box-sizing: border-box;
+    }
 
     /* Chart panel: dark, blends with card */
     .chart-wrap { background: rgba(0, 0, 0, .28); border: 1px solid rgba(255,255,255,.1); border-radius: 12px; }
@@ -231,39 +243,61 @@
     }
 
     
-    /* ── Affiliate & Partner Deals CSS ── */
+    
+    /* ── Enhanced Affiliate Showcase & Reset Button CSS ── */
+    .btn-reset-form {
+      color: #f87171 !important; border: 1px solid rgba(248, 113, 113, .3) !important;
+      background: rgba(248, 113, 113, .08) !important; font-size: .8rem;
+      border-radius: 8px; padding: 3px 9px; transition: all .15s;
+    }
+    .btn-reset-form:hover {
+      background: #ef4444 !important; color: #fff !important; border-color: #ef4444 !important;
+    }
+
     .affiliate-section {
-      background: linear-gradient(135deg, rgba(30, 41, 59, .75), rgba(15, 23, 42, .85));
-      border: 1px solid rgba(245, 158, 11, .3) !important;
+      background: linear-gradient(135deg, rgba(28, 24, 20, .95), rgba(16, 14, 11, .98));
+      border: 1px solid rgba(245, 158, 11, .35) !important;
       border-radius: var(--radius-lg);
     }
     .affiliate-section h5 { color: #fbbf24; font-weight: 600; }
-    .aff-card-item {
-      background: rgba(0, 0, 0, .28); border: 1px solid var(--border);
-      border-radius: 12px; padding: 12px 14px; transition: all .2s;
-      height: 100%; display: flex; flex-column; justify-content: space-between;
+    
+    .aff-showcase-card {
+      background: rgba(36, 31, 26, .9); border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 14px; overflow: hidden; transition: all .25s ease;
+      height: 100%; display: flex; flex-direction: column;
     }
-    .aff-card-item:hover {
-      border-color: rgba(245, 158, 11, .5); transform: translateY(-2px);
-      box-shadow: 0 4px 14px rgba(0,0,0,.35);
+    .aff-showcase-card:hover {
+      border-color: rgba(245, 158, 11, .6); transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, .5);
     }
-    .aff-badge-tag {
-      background: rgba(245, 158, 11, .15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, .3);
-      font-size: .68rem; font-weight: 600; padding: 2px 6px; border-radius: 4px;
+    .aff-img-wrap {
+      position: relative; width: 100%; height: 160px; overflow: hidden; background: #000;
     }
-    .btn-aff-cta {
-      background: linear-gradient(135deg, #d97706, #f59e0b); border: none; color: #fff;
-      font-size: .78rem; font-weight: 500; border-radius: 8px; padding: 5px 12px;
+    .aff-img-wrap img {
+      width: 100%; height: 100%; object-fit: cover; transition: transform .3s ease;
+    }
+    .aff-showcase-card:hover .aff-img-wrap img {
+      transform: scale(1.05);
+    }
+    .aff-tag-badge {
+      position: absolute; top: 10px; left: 10px;
+      background: linear-gradient(135deg, #b45309, #f59e0b);
+      color: #fff; font-size: .72rem; font-weight: 600;
+      padding: 3px 8px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,.4);
+    }
+    .aff-card-body {
+      padding: 14px; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between;
+    }
+    .btn-aff-cta-lg {
+      background: linear-gradient(135deg, #EE4D2D, #ff6a47); border: none; color: #fff !important;
+      font-size: .84rem; font-weight: 600; border-radius: 999px; padding: 7px 16px;
       text-decoration: none; display: inline-flex; align-items: center; justify-content: center;
-      transition: all .15s;
+      transition: all .2s; box-shadow: 0 4px 12px rgba(238, 77, 45, .3);
     }
-    .btn-aff-cta:hover {
-      background: linear-gradient(135deg, #b45309, #d97706); color: #fff; transform: translateY(-1px);
+    .btn-aff-cta-lg:hover {
+      background: linear-gradient(135deg, #ff6a47, #ff8a66); transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(238, 77, 45, .5);
     }
-    .aff-pack-link {
-      color: #fbbf24 !important; font-size: .75rem; text-decoration: none; transition: all .15s;
-    }
-    .aff-pack-link:hover { text-decoration: underline !important; color: #fde68a !important; }
 
     /* ── Alerts ── */
     .alert-warning { background: rgba(245, 158, 11, .12); border-color: rgba(245, 158, 11, .35); color: #fbbf24; }
@@ -351,6 +385,10 @@
           <div class="card shadow-sm border-0 rounded-3 mb-4">
             <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
               <h5 class="mb-0 fw-semibold"><i class="bi bi-pencil-square me-2"></i>ข้อมูลสินค้าและต้นทุน</h5>
+              <button type="button" class="btn btn-reset-form d-flex align-items-center gap-1" onclick="resetForm()" title="เคลียร์ข้อมูลฟอร์มทั้งหมด">
+                <i class="bi bi-arrow-counterclockwise"></i>
+                <span>ล้างข้อมูล</span>
+              </button>
             </div>
             <div class="card-body p-4">
               <div class="mb-3">
@@ -958,23 +996,22 @@ function renderPlatforms() {
       </div>` : '';
 
     const headline = form.calcMode === 'target'
-      ? `<div class="d-flex justify-content-between align-items-center mb-1">
-           <span class="small opacity-75">ราคาขายที่แนะนำ</span>
-           <button type="button" class="btn btn-copy-price" onclick="copyPrice(${r.price}, '${p.name}')" title="คัดลอกตัวเลขราคาขาย">
+      ? `<div class="d-flex justify-content-between align-items-center w-100" style="font-size:.76rem;line-height:1.2">
+           <span class="opacity-75">ราคาขายที่แนะนำ</span>
+           <button type="button" class="btn btn-copy-price py-0 px-2" onclick="copyPrice(${r.price}, '${p.name}')" title="คัดลอกตัวเลขราคาขาย">
              <i class="bi bi-copy me-1"></i>คัดลอก
            </button>
          </div>
-         <span class="price-big">฿${fmt(r.price)}</span>
-         <span class="d-block small opacity-75 mt-1">รวมกำไรเป้าหมาย ฿${fmt(form.targetProfit)}/ชิ้น</span>
-         ${psyHtml}`
-      : `<div class="d-flex justify-content-between align-items-center mb-1">
-           <span class="small opacity-75">กำไรสุทธิ ณ ราคานี้</span>
-           <button type="button" class="btn btn-copy-price" onclick="copyPrice(${r.price}, '${p.name}')" title="คัดลอกตัวเลขราคาขาย">
-             <i class="bi bi-copy me-1"></i>คัดลอกราคา
+         <span class="price-big my-0">฿${fmt(r.price)}</span>
+         <span class="d-block opacity-75" style="font-size:.72rem;line-height:1.2">รวมกำไรเป้าหมาย ฿${fmt(form.targetProfit)}/ชิ้น</span>`
+      : `<div class="d-flex justify-content-between align-items-center w-100" style="font-size:.76rem;line-height:1.2">
+           <span class="opacity-75">กำไรสุทธิ ณ ราคานี้</span>
+           <button type="button" class="btn btn-copy-price py-0 px-2" onclick="copyPrice(${r.price}, '${p.name}')" title="คัดลอกตัวเลขราคาขาย">
+             <i class="bi bi-copy me-1"></i>คัดลอก
            </button>
          </div>
-         <span class="price-big ${r.profit < 0 ? 'text-warning' : ''}">฿${fmt(r.profit)}</span>
-         <span class="d-block small opacity-75 mt-1">อัตรากำไร ${fmt(r.marginPercent)}%</span>`;
+         <span class="price-big ${r.profit < 0 ? 'text-warning' : ''} my-0">฿${fmt(r.profit)}</span>
+         <span class="d-block opacity-75" style="font-size:.72rem;line-height:1.2">อัตรากำไร ${fmt(r.marginPercent)}%</span>`;
 
     const feeEditor = p.showFees ? `
       <div class="rounded-3 p-2 mb-2" style="background:rgba(0,0,0,.25)">
@@ -1021,7 +1058,8 @@ function renderPlatforms() {
 
         ${p.enabled ? `
         ${feeEditor}
-        <div class="result-box p-3 text-center mb-2">${headline}</div>
+        <div class="result-box mb-2">${headline}</div>
+        ${psyHtml}
         ${roasBadge}
 
         ${r.warning ? `<div class="small rounded-2 px-3 py-2 mb-2" style="background:rgba(220,38,38,.25)">${r.warning}</div>` : ''}
@@ -1509,6 +1547,7 @@ async function shareCalc() {
 }
 
 
+
 /* ═══════════════════════════════════════════════════════════
    E-Commerce Affiliate Marketing & Partner Deals Config
    (คุณสามารถเปลี่ยน URL หรือโค้ดส่วนลดเป็นลิงก์ Affiliate ของคุณได้ที่นี่)
@@ -1518,39 +1557,66 @@ const AFFILIATE_DEALS = [
     id: 'packaging',
     icon: '📦',
     title: 'กล่องพัสดุ & ซองไปรษณีย์ ราคาส่งโรงงาน',
-    desc: 'กล่องเบอร์ 00, 0, A, 2A, B, C ซองพลาสติกกันน้ำ บับเบิ้ลกันกระแทกราคาโรงงาน',
-    tag: 'ลดต้นทุนแพ็ก',
-    btnText: 'สั่งซื้อราคาส่ง',
+    desc: 'กล่องเบอร์ 00, 0, A, 2A, B, C ซองพลาสติกกันน้ำ บับเบิ้ลกันกระแทกคุณภาพดี ราคาโรงงานส่งตรง',
+    tag: '🔥 ลดต้นทุนแพ็ก',
+    badge: 'ราคาโรงงาน เริ่มต้น ฿1.50',
+    img: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=600&auto=format&fit=crop&q=80',
+    btnText: 'สั่งซื้อกล่องราคาส่ง',
     link: 'https://s.shopee.co.th/1VylrqcIMu'
   },
   {
     id: 'printer',
     icon: '🖨️',
     title: 'เครื่องปริ้นใบปะหน้าพัสดุ (Thermal Printer)',
-    desc: 'เครื่องพิมพ์ความร้อนไร้หมึก ปริ้นใบปะหน้า Shopee, TikTok, Lazada, Flash รวดเร็ว',
-    tag: 'ประหยัดเวลา',
-    btnText: 'ดูรุ่นแนะนำ',
+    desc: 'เครื่องพิมพ์ความร้อนไร้หมึก ปริ้นใบปะหน้า Shopee, TikTok, Lazada, Flash รวดเร็ว คมชัด ไม่ต้องเติมหมึก',
+    tag: '⭐ ร้านค้าแนะนำ',
+    badge: 'พิมพ์เร็ว ไร้หมึก คมชัด',
+    img: 'https://images.unsplash.com/photo-1612815154858-60aa4c59eaa6?w=600&auto=format&fit=crop&q=80',
+    btnText: 'ดูเครื่องปริ้นแนะนำ',
     link: 'https://s.shopee.co.th/1VylrqcIMu'
   },
   {
     id: 'oms',
     icon: '⚡',
     title: 'โปรแกรมรวมแชท & ตัดสต็อกอัตโนมัติ',
-    desc: 'เชื่อมต่อสต็อก Shopee + TikTok Shop + Lazada ในที่เดียว ป้องกันสต็อกชน',
-    tag: 'ทดลองใช้ฟรี',
-    btnText: 'รับสิทธิ์ฟรี',
+    desc: 'เชื่อมต่อสต็อก Shopee + TikTok Shop + Lazada ในที่เดียว ป้องกันสต็อกชน รวมออเดอร์พิมพ์ใบปะหน้าในคลิกเดียว',
+    tag: '🎁 ทดลองฟรี 14 วัน',
+    badge: 'รวม Shopee+TikTok+Lazada',
+    img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=600&auto=format&fit=crop&q=80',
+    btnText: 'รับสิทธิ์ทดลองฟรี',
     link: 'https://zortout.com'
   },
   {
     id: 'shipping',
     icon: '🚚',
     title: 'บริการขนส่ง & เรียกรถรับพัสดุถึงบ้าน',
-    desc: 'เรทค่าส่งพิเศษสำหรับร้านค้าออนไลน์ มีประกันสินค้า และเข้ารับฟรีถึงหน้าบ้าน',
-    tag: 'ส่วนลดค่าส่ง',
-    btnText: 'ดูเรทพิเศษ',
+    desc: 'เรทค่าส่งพิเศษสำหรับร้านค้าออนไลน์ มีประกันสินค้า และเข้ารับฟรีถึงหน้าบ้าน ประหยัดเวลาไม่ต้องต่อคิวส่ง',
+    tag: '🚚 เข้ารับฟรีถึงบ้าน',
+    badge: 'ส่วนลดค่าส่งพิเศษ',
+    img: 'https://images.unsplash.com/photo-1578575437130-527eed3abbec?w=600&auto=format&fit=crop&q=80',
+    btnText: 'ดูเรทค่าส่งพิเศษ',
     link: 'https://flashexpress.com'
   }
 ];
+
+function resetForm() {
+  $id('productName').value = '';
+  $id('productCost').value = '0';
+  $id('packCost').value = '0';
+  $id('targetProfit').value = '100';
+  $id('sellPrice').value = '250';
+  $id('adsFee').value = '3.00';
+  $id('voucherFee').value = '0';
+  $id('returnBuffer').value = '0';
+  document.querySelectorAll('.pkg-preset-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector('.pkg-preset-btn')?.classList.add('active');
+  renderPlatforms();
+  updateGlobalWarning();
+  Swal.fire({
+    toast: true, position: 'top-end', icon: 'success',
+    title: 'เคลียร์ข้อมูลเรียบร้อยแล้ว', showConfirmButton: false, timer: 1500, timerProgressBar: true
+  });
+}
 
 function openAffiliateLink(id) {
   const item = AFFILIATE_DEALS.find(x => x.id === id) || AFFILIATE_DEALS[0];
@@ -1562,21 +1628,22 @@ function renderAffiliateDeals() {
   if (!el) return;
   el.innerHTML = AFFILIATE_DEALS.map(d => `
     <div class="col-md-6">
-      <div class="aff-card-item">
-        <div class="d-flex align-items-start gap-2 mb-2">
-          <span style="font-size:1.6rem;line-height:1">${d.icon}</span>
-          <div class="flex-grow-1">
-            <div class="d-flex justify-content-between align-items-center">
-              <div class="fw-semibold text-white small">${d.title}</div>
-            </div>
-            <span class="aff-badge-tag mt-1 d-inline-block">${d.tag}</span>
-          </div>
+      <div class="aff-showcase-card">
+        <div class="aff-img-wrap">
+          <img src="${d.img}" alt="${d.title}" loading="lazy">
+          <span class="aff-tag-badge">${d.tag}</span>
         </div>
-        <div class="text-secondary small mb-3" style="font-size:.78rem;line-height:1.45">${d.desc}</div>
-        <div class="text-end">
-          <a href="${d.link}" target="_blank" rel="noopener noreferrer" class="btn-aff-cta">
-            ${d.btnText} <i class="bi bi-box-arrow-up-right ms-1" style="font-size:.7rem"></i>
-          </a>
+        <div class="aff-card-body">
+          <div>
+            <div class="fw-semibold text-white mb-1" style="font-size:.95rem">${d.icon} ${d.title}</div>
+            <div class="text-warning small mb-2" style="font-size:.78rem;font-weight:500">${d.badge}</div>
+            <div class="text-secondary small mb-3" style="font-size:.8rem;line-height:1.45">${d.desc}</div>
+          </div>
+          <div class="text-end mt-auto pt-2 border-top border-secondary border-opacity-25">
+            <a href="${d.link}" target="_blank" rel="noopener noreferrer" class="btn-aff-cta-lg w-100">
+              ${d.btnText} <i class="bi bi-arrow-right-short ms-1" style="font-size:1.1rem"></i>
+            </a>
+          </div>
         </div>
       </div>
     </div>`).join('');
@@ -1584,25 +1651,38 @@ function renderAffiliateDeals() {
 
 function openDealsModal() {
   const itemsHtml = AFFILIATE_DEALS.map(d => `
-    <div class="p-3 mb-2 rounded-3 text-start" style="background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1)">
-      <div class="d-flex justify-content-between align-items-center mb-1">
-        <div class="fw-bold text-warning">${d.icon} ${d.title}</div>
-        <span class="badge text-bg-warning">${d.tag}</span>
-      </div>
-      <div class="small text-secondary mb-2">${d.desc}</div>
-      <div class="text-end">
-        <a href="${d.link}" target="_blank" rel="noopener" class="btn btn-warning btn-sm rounded-pill px-3 fw-medium">
-          ${d.btnText} <i class="bi bi-box-arrow-up-right ms-1"></i>
-        </a>
+    <div class="col-md-6 mb-3">
+      <div class="aff-showcase-card" style="background:#1c1814;border:1px solid rgba(255,255,255,.15);text-align:left">
+        <div class="aff-img-wrap" style="height:150px">
+          <img src="${d.img}" alt="${d.title}" style="width:100%;height:100%;object-fit:cover">
+          <span class="aff-tag-badge">${d.tag}</span>
+        </div>
+        <div class="aff-card-body p-3">
+          <div class="fw-bold text-white mb-1" style="font-size:.95rem">${d.icon} ${d.title}</div>
+          <div class="text-warning small mb-2" style="font-size:.78rem;font-weight:500">${d.badge}</div>
+          <div class="text-secondary small mb-3" style="font-size:.8rem;line-height:1.45">${d.desc}</div>
+          <div class="mt-auto">
+            <a href="${d.link}" target="_blank" rel="noopener noreferrer" class="btn-aff-cta-lg w-100">
+              ${d.btnText} <i class="bi bi-box-arrow-up-right ms-1" style="font-size:.8rem"></i>
+            </a>
+          </div>
+        </div>
       </div>
     </div>`).join('');
 
   Swal.fire({
-    title: '<i class="bi bi-tag-fill text-warning me-2"></i>ดีลพิเศษสำหรับร้านค้าออนไลน์',
-    html: `<div style="max-height:60vh;overflow-y:auto">${itemsHtml}</div>`,
-    confirmButtonText: 'ปิด',
-    confirmButtonColor: '#EE4D2D',
-    width: 540
+    title: '<div class="d-flex align-items-center justify-content-center gap-2"><i class="bi bi-tag-fill text-warning"></i><span>ดีลพิเศษ & อุปกรณ์แนะนำสำหรับร้านค้า</span></div>',
+    html: `
+      <div style="max-height:75vh;overflow-y:auto;padding:5px">
+        <p class="text-secondary small mb-3 text-center">คัดสรรอุปกรณ์และบริการคุณภาพที่ช่วยลดต้นทุนและเพิ่มยอดขายสำหรับร้านค้า Shopee, Lazada และ TikTok Shop</p>
+        <div class="row g-3">${itemsHtml}</div>
+      </div>`,
+    confirmButtonText: 'ปิดหน้าต่าง',
+    confirmButtonColor: '#343a40',
+    width: 900,
+    customClass: {
+      popup: 'border border-warning border-opacity-25'
+    }
   });
 }
 
